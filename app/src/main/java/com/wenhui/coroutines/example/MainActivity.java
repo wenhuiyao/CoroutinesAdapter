@@ -50,10 +50,10 @@ public class MainActivity extends FragmentActivity {
         }).transform((count) -> {
             Log.d(TAG, "enter background transformation: " + getCurrentThreadName());
             return startBackgroundTransformation(count);
-        }).transform(CoroutineContexts.CONTEXT_NON_CANCELLABLE, (count) -> {
+        }).transform(CoroutineContexts.NON_CANCELLABLE, (count) -> {
             Log.d(TAG, "enter non cancellable transformation: " + getCurrentThreadName());
             return count;
-        }).transform(CoroutineContexts.CONTEXT_UI, (count) -> {
+        }).transform(CoroutineContexts.UI, (count) -> {
             Log.d(TAG, "enter UI transformation: " + getCurrentThreadName());
             mTextView.setText("transform in UI Thread");
             return "transformed " + (count * 2);
