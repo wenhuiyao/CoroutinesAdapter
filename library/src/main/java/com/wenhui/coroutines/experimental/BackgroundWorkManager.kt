@@ -8,11 +8,18 @@ import kotlinx.coroutines.experimental.Job
 class BackgroundWorkManager {
 
     internal val jobRef = Job()
-    internal val activeWorks = ArrayList<Work>(3)
+    private val activeJobs = ArrayList<Job>(3)
+
+    internal fun manageJob(job: Job){
+        job.invokeOnCompletion {
+            activeJobs.remove(job)
+        }
+        activeJobs.add(job)
+    }
 
     fun cancelAllWorks() {
         jobRef.cancel()
     }
 
-    fun hasActiveWorks() = !activeWorks.isEmpty()
+    fun hasActiveWorks() = !activeJobs.isEmpty()
 }

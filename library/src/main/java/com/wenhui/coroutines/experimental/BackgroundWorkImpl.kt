@@ -92,12 +92,7 @@ internal abstract class BaseWorker<T>: Operator<T> {
         }
 
         val work = WorkImpl(job)
-        manager?.run {
-            this.activeWorks.add(work)
-            job.invokeOnCompletion {
-                this.activeWorks.remove(work)
-            }
-        }
+        manager?.manageJob(job)
         return work
     }
 

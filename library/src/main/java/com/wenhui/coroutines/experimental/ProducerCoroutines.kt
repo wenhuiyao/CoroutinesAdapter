@@ -8,16 +8,16 @@ import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
- * Utility method to create a [Producer], and the producer can be reused to consume items by calling [Producer.produce],
+ * Utility method to create a [Producer], and the producer can be reused to execute items by calling [Producer.produce],
  * producer will be active until [Producer.close] is called, or when using [BackgroundWorkManager], producer will be
  * closed when [BackgroundWorkManager.cancelAllWorks] is called
  */
-fun <T, R> consumeBy(action: ConsumerAction<T, R>): ConsumerOperator<T, R> {
+fun <T, R> consumeBy(action: ConsumeAction<T, R>): ConsumerOperator<T, R> {
     val consumer = ConsumerImpl(action)
     return ProducerConsumer(consumer, consumer)
 }
 
-typealias ConsumerAction<T, R> = (T) -> R
+typealias ConsumeAction<T, R> = (T) -> R
 typealias FilterAction<T> = (T) -> Boolean
 
 
@@ -36,7 +36,7 @@ interface Producer<in T> {
     /**
      * Close this producer job, no more item will be accepted, and the state will be inactive at this point
      */
-    fun close(reason: Throwable?)
+    fun close(reason: Throwable? = null)
 }
 
 interface Completion<T, R> {
@@ -68,7 +68,7 @@ interface ConsumerOperator<T, R> : ProducerBuilder<T, R> {
     /**
      * Transform a source from type T to type R in background thread
      */
-    fun <M> transform(action: ConsumerAction<R, M>): ConsumerOperator<T, M> = transform(CONTEXT_BG, action)
+    fun <M> transform(action: ConsumeAction<R, M>): ConsumerOperator<T, M> = transform(CONTEXT_BG, action)
 
     /**
      * Transform a source from type T to type R
@@ -76,7 +76,7 @@ interface ConsumerOperator<T, R> : ProducerBuilder<T, R> {
      * @param context: one of [CONTEXT_BG], [CONTEXT_UI], but not[CONTEXT_NON_CANCELLABLE]
      *
      */
-    fun <M> transform(context: CoroutineContext, action: ConsumerAction<R, M>): ConsumerOperator<T, M>
+    fun <M> transform(context: CoroutineContext, action: ConsumeAction<R, M>): ConsumerOperator<T, M>
 
     /**
      * Operate on the item, by default it is running on the background thread
@@ -92,34 +92,34 @@ interface ConsumerOperator<T, R> : ProducerBuilder<T, R> {
     fun filter(action: FilterAction<R>): ConsumerOperator<T, R>
 }
 
-private interface Updater<T> {
-    fun updateElement(element: T)
-}
-
 private interface Consumer<T> {
-    suspend fun consume(scope: CoroutineScope): T
+    fun consume(element: T)
 }
 
-private class ConsumerImpl<T, R>(private val action: ConsumerAction<T, R>) : Updater<T>, Consumer<R> {
+private interface Executor<T> {
+    suspend fun execute(scope: CoroutineScope): T
+}
+
+private class ConsumerImpl<T, R>(private val action: ConsumeAction<T, R>) : Consumer<T>, Executor<R> {
 
     @Volatile private var element: T? = null
 
-    override fun updateElement(element: T) {
+    override fun consume(element: T) {
         this.element = element
     }
 
-    suspend override fun consume(scope: CoroutineScope): R {
+    suspend override fun execute(scope: CoroutineScope): R {
         scope.ensureActive()
         return action(element!!)
     }
 }
 
-private class TransformerImpl<T, R>(private val dependedConsumer: Consumer<T>,
-                                    private val transformAction: ConsumerAction<T, R>,
-                                    private val context: CoroutineContext) : Consumer<R> {
+private class TransformerImpl<T, R>(private val dependedExecutor: Executor<T>,
+                                    private val transformAction: ConsumeAction<T, R>,
+                                    private val context: CoroutineContext) : Executor<R> {
 
-    suspend override fun consume(scope: CoroutineScope): R {
-        val t = dependedConsumer.consume(scope)
+    suspend override fun execute(scope: CoroutineScope): R {
+        val t = dependedExecutor.execute(scope)
 
         scope.ensureActive()
         return run(context) { transformAction(t) }
@@ -127,12 +127,12 @@ private class TransformerImpl<T, R>(private val dependedConsumer: Consumer<T>,
 
 }
 
-private class OperatorImpl<R>(private val dependedConsumer: Consumer<R>,
+private class OperatorImpl<R>(private val dependedExecutor: Executor<R>,
                               private val action: ParametrizedAction<R>,
-                              private val context: CoroutineContext) : Consumer<R> {
+                              private val context: CoroutineContext) : Executor<R> {
 
-    suspend override fun consume(scope: CoroutineScope): R {
-        val r = dependedConsumer.consume(scope)
+    suspend override fun execute(scope: CoroutineScope): R {
+        val r = dependedExecutor.execute(scope)
 
         scope.ensureActive()
         run(context) { action(r) }
@@ -140,11 +140,11 @@ private class OperatorImpl<R>(private val dependedConsumer: Consumer<R>,
     }
 }
 
-private class FilterImpl<R>(private val dependedConsumer: Consumer<R>,
-                            private val filter: FilterAction<R>) : Consumer<R> {
+private class FilterImpl<R>(private val dependedExecutor: Executor<R>,
+                            private val filter: FilterAction<R>) : Executor<R> {
 
-    suspend override fun consume(scope: CoroutineScope): R {
-        val r = dependedConsumer.consume(scope)
+    suspend override fun execute(scope: CoroutineScope): R {
+        val r = dependedExecutor.execute(scope)
 
         scope.ensureActive()
         if (!filter(r)) throw IgnoreException()
@@ -152,28 +152,28 @@ private class FilterImpl<R>(private val dependedConsumer: Consumer<R>,
     }
 }
 
-private class ProducerConsumer<T, R>(private val updater: Updater<T>,
-                                     private val consumer: Consumer<R>) : ConsumerOperator<T, R> {
+private class ProducerConsumer<T, R>(private val consumer: Consumer<T>,
+                                     private val executor: Executor<R>) : ConsumerOperator<T, R> {
 
     private var successAction: ParametrizedAction<R>? = null
     private var errorAction: ParametrizedAction<Throwable>? = null
     private var manager: BackgroundWorkManager? = null
 
-    override fun <M> transform(context: CoroutineContext, action: ConsumerAction<R, M>): ConsumerOperator<T, M> {
+    override fun <M> transform(context: CoroutineContext, action: ConsumeAction<R, M>): ConsumerOperator<T, M> {
         ensureContextValidExcludeNonCancellable(context)
-        val newTransformer = TransformerImpl(consumer, action, context)
-        return ProducerConsumer(updater, newTransformer)
+        val newTransformer = TransformerImpl(executor, action, context)
+        return ProducerConsumer(consumer, newTransformer)
     }
 
     override fun operate(context: CoroutineContext, action: ParametrizedAction<R>): ConsumerOperator<T, R> {
         ensureContextValidExcludeNonCancellable(context)
-        val newTransformer = OperatorImpl(consumer, action, context)
-        return ProducerConsumer(updater, newTransformer)
+        val newTransformer = OperatorImpl(executor, action, context)
+        return ProducerConsumer(consumer, newTransformer)
     }
 
     override fun filter(action: FilterAction<R>): ConsumerOperator<T, R> {
-        val newTransformer = FilterImpl(consumer, action)
-        return ProducerConsumer(updater, newTransformer)
+        val newTransformer = FilterImpl(executor, action)
+        return ProducerConsumer(consumer, newTransformer)
     }
 
     override fun onSuccess(action: ParametrizedAction<R>): ProducerBuilder<T, R> {
@@ -211,14 +211,14 @@ private class ProducerConsumer<T, R>(private val updater: Updater<T>,
             }
         }
         producer.job = job
-
+        manager?.manageJob(job)
         return producer
     }
 
-    private suspend fun consumeElement(element: T) = launch(CONTEXT_BG) InternalJob@ {
+    private suspend fun consumeElement(element: T): Job = launch(CONTEXT_BG) InternalJob@ {
         try {
-            updater.updateElement(element)
-            val result = consumer.consume(this)
+            consumer.consume(element)
+            val result = executor.execute(this)
             if (isActive) {
                 run(CONTEXT_UI) {
                     successAction?.invoke(result)
@@ -261,4 +261,4 @@ private fun CoroutineScope.ensureActive() {
     }
 }
 
-internal class IgnoreException : Exception()
+private class IgnoreException : Exception()
