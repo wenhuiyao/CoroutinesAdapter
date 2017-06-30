@@ -49,7 +49,7 @@ private class OperationWork<out T>(private val dependedWork: BaseWork<T>,
 
 }
 
-internal abstract class BaseWorker<T>: Operator<T> {
+internal abstract class BaseWorker<T> : Operator<T> {
     protected var successAction: ParametrizedAction<T>? = null
     protected var errorAction: ParametrizedAction<Throwable>? = null
     protected var startDelay = 0L
@@ -82,7 +82,7 @@ internal abstract class BaseWorker<T>: Operator<T> {
     }
 
     override fun start(): Work {
-        val context = manager?.let { CONTEXT_BG + it.jobRef } ?: CONTEXT_BG
+        val context = manager?.monitorJobWithNewContext(CONTEXT_BG) ?: CONTEXT_BG
         val job = launch(context) {
             if (startDelay > 0) {
                 delay(startDelay)

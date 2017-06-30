@@ -60,7 +60,15 @@ interface JobManager<T, R> {
     fun manageBy(manager: BackgroundWorkManager): ProducerBuilder<T, R>
 }
 
-interface ProducerBuilder<T, R> : Completion<T, R>, JobManager<T, R> {
+interface ConsumeDelay<T, R> {
+
+    /**
+     * Set the time to delay to consume each element
+     */
+    fun setConsumeDelay(time: Long): ProducerBuilder<T, R>
+}
+
+interface ProducerBuilder<T, R> : JobManager<T, R>, Completion<T, R>, ConsumeDelay<T, R> {
     fun build(): Producer<T>
 }
 
@@ -158,6 +166,7 @@ private class ProducerConsumer<T, R>(private val consumer: Consumer<T>,
     private var successAction: ParametrizedAction<R>? = null
     private var errorAction: ParametrizedAction<Throwable>? = null
     private var manager: BackgroundWorkManager? = null
+    private var consumeDelayed: Long = 0L
 
     override fun <M> transform(context: CoroutineContext, action: ConsumeAction<R, M>): ConsumerOperator<T, M> {
         ensureContextValidExcludeNonCancellable(context)
@@ -192,6 +201,11 @@ private class ProducerConsumer<T, R>(private val consumer: Consumer<T>,
         return this
     }
 
+    override fun setConsumeDelay(time: Long): ProducerBuilder<T, R> {
+        consumeDelayed = time
+        return this
+    }
+
     override fun manageBy(manager: BackgroundWorkManager): ProducerBuilder<T, R> {
         this.manager = manager
         return this
@@ -200,7 +214,7 @@ private class ProducerConsumer<T, R>(private val consumer: Consumer<T>,
     override fun build(): Producer<T> {
         val producer = ProducerImpl<T>()
 
-        val context = manager?.let { CONTEXT_BG + it.jobRef } ?: CONTEXT_BG
+        val context = manager?.monitorJobWithNewContext(CONTEXT_BG) ?: CONTEXT_BG
         val job = launch(context) {
             var internalJob: Job? = null
             producer.channel.consumeEach {
@@ -217,6 +231,10 @@ private class ProducerConsumer<T, R>(private val consumer: Consumer<T>,
 
     private suspend fun consumeElement(element: T): Job = launch(CONTEXT_BG) InternalJob@ {
         try {
+            if (consumeDelayed > 0) {
+                delay(consumeDelayed)
+            }
+
             consumer.consume(element)
             val result = executor.execute(this)
             if (isActive) {
