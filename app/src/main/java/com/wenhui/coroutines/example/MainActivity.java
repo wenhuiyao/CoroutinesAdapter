@@ -7,12 +7,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.wenhui.coroutines.experimental.BackgroundWorkManager;
+import com.wenhui.coroutines.experimental.CoroutineContexts;
 import com.wenhui.coroutines.experimental.Coroutines;
-import com.wenhui.coroutines.experimental.Working;
-import com.wenhui.ktexampleapp.coroutines.BackgroundWorkManager;
 import kotlin.Unit;
-
-import static com.wenhui.coroutines.experimental.Coroutines.newBackgroundWork;
 
 /**
  * Created by wyao on 6/24/17.
@@ -31,20 +29,20 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
 
         View button = findViewById(R.id.button);
-        button.setOnClickListener((v)-> onClick());
+        button.setOnClickListener((v) -> onClick());
 
-        mTextView = (TextView)findViewById(R.id.textView);
+        mTextView = (TextView) findViewById(R.id.textView);
     }
 
     private void onClick() {
-        if (mJobManager.hasActiveJobs()) {
-            mJobManager.cancelJobs();
+        if (mJobManager.hasActiveWorks()) {
+            mJobManager.cancelAllWorks();
             mTextView.setText("Cancel current work");
             return;
         }
 
         mTextView.setText("start background work");
-        Working working = newBackgroundWork(() -> {
+        Coroutines.backgroundWork(() -> {
             Log.d(TAG, "enter with background thread: " + getCurrentThreadName());
             final int count = 1000;
             startBackgroundWork(count);
@@ -52,10 +50,10 @@ public class MainActivity extends FragmentActivity {
         }).transform((count) -> {
             Log.d(TAG, "enter background transformation: " + getCurrentThreadName());
             return startBackgroundTransformation(count);
-        }).transform(Coroutines.CONTEXT_NON_CANCELLABLE, (count) -> {
+        }).transform(CoroutineContexts.CONTEXT_NON_CANCELLABLE, (count) -> {
             Log.d(TAG, "enter non cancellable transformation: " + getCurrentThreadName());
             return count;
-        }).transform(Coroutines.CONTEXT_UI, (count) -> {
+        }).transform(CoroutineContexts.CONTEXT_UI, (count) -> {
             Log.d(TAG, "enter UI transformation: " + getCurrentThreadName());
             mTextView.setText("transform in UI Thread");
             return "transformed " + (count * 2);
@@ -71,12 +69,11 @@ public class MainActivity extends FragmentActivity {
             Log.d(TAG, "onError");
             Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
             return Unit.INSTANCE;
-        }).setStartDelay(2000).start();
+        }).setStartDelay(2000).manageBy(mJobManager).start();
 
-        mJobManager.addActiveWork(working);
     }
 
-    private void startBackgroundWork(int count){
+    private void startBackgroundWork(int count) {
         try {
             int sleep = count;
             Log.d(TAG, "[with background] sleep " + sleep + "ms");
@@ -85,7 +82,7 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
-    private int startBackgroundTransformation(int count){
+    private int startBackgroundTransformation(int count) {
         try {
             int sleep = count;
             Log.d(TAG, "[transform background] sleep " + sleep + "ms");
@@ -95,13 +92,13 @@ public class MainActivity extends FragmentActivity {
         return count;
     }
 
-    private static String getCurrentThreadName(){
+    private static String getCurrentThreadName() {
         return Thread.currentThread().getName();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mJobManager.cancelJobs();
+        mJobManager.cancelAllWorks();
     }
 }

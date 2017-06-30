@@ -4,11 +4,13 @@ Adapter Kotlin coroutines for Android usage
 
 ### Example
 
-NOTE: all example is written using Java 8 lambda expression
+NOTE:
+1. Kotlin coroutine is still an experimental feature
+2. All example is written using Java 8 lambda expression
 
 ##### Simple usage
 ```Java
-    newBackgroundWork(() -> {
+    backgroundWork(() -> {
             Log.d(TAG, "enter with background thread: " + getCurrentThreadName());
             return doLengthlyWork();
         }).onSuccess((value) -> {
@@ -25,7 +27,7 @@ NOTE: all example is written using Java 8 lambda expression
 ##### Transform response to different value
 
 ```Java
-    newBackgroundWork(() -> {
+    background(() -> {
             Log.d(TAG, "enter with background thread: " + getCurrentThreadName());
             return doLengthlyWork();
         }).transform(CONTEXT_BG, (value) -> {
@@ -45,7 +47,7 @@ NOTE: all example is written using Java 8 lambda expression
 
 ##### Specific Context when doing transformation
 ```Java
-1. CONTEXT_BG -> Doing working in background
-2. CONTEXT_UI -> Doing working in UI thread
+1. CONTEXT_BG -> Doing working on background
+2. CONTEXT_UI -> Doing working on UI thread
 3. CONTEXT_NON_CANCELLABLE -> Indicate the work can't be cancelled
 ```
