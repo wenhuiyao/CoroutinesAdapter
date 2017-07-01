@@ -1,1 +1,1 @@
-include ':app', ':CoroutineAdapter-Library'
+include ':app', ':coroutines-adapter'
