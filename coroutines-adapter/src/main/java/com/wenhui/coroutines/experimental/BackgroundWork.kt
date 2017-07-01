@@ -32,7 +32,7 @@ fun <T1, T2, T3, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>
 typealias Action<T> = () -> T
 
 /**
- * Transform a value to another value from type T to type R
+ * Transform a value from type T to type R
  */
 typealias TransformAction<T, R> = (T) -> R
 typealias ParametrizedAction<T> = (T) -> Unit
@@ -58,6 +58,10 @@ interface WorkManager<T> {
 
 interface WorkStarter<T> {
     fun setStartDelay(delay: Long): Worker<T>
+
+    /**
+     * This must be called to start the work
+     */
     fun start(): Work
 }
 
@@ -95,11 +99,17 @@ interface TriMerger<T1, T2, T3, R> {
     fun merge(action: TriMergeAction<T1, T2, T3, R>): Operator<R>
 }
 
+/**
+ * The basic building block for a background work.
+ */
 abstract class BaseWork<out T> {
 
     // by default it is cancellable
     open var cancellable = true
 
+    /**
+     * Start the work, and it should always call [ensureContextCancellable] before proceed
+     */
     abstract suspend fun startWork(scope: CoroutineScope): T
 
     protected fun ensureWorkActive(scope: CoroutineScope) {
@@ -110,23 +120,23 @@ abstract class BaseWork<out T> {
 }
 
 /**
- * Background work in progress. It can be [cancel] when needed.
+ * Represent a background work, which can be [cancel] when needed.
  */
 interface Work {
 
     /**
-     * Returns `true` when this jobRef is active.
+     * Returns `true` when this work is active.
      */
     val isActive: Boolean
 
     /**
-     * Returns `true` when this jobRef has completed for any reason, even if it is cancelled.
+     * Returns `true` when this work has completed for any reason, even if it is cancelled.
      */
     val isCompleted: Boolean
 
 
     /**
-     * Cancel this jobRef. The result is `true` if this jobRef was
+     * Cancel this work. The result is `true` if this work was
      * cancelled as a result of this invocation and `false` otherwise
      */
     fun cancel(): Boolean

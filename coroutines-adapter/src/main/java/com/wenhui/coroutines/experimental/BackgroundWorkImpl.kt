@@ -49,12 +49,32 @@ private class OperationWork<out T>(private val dependedWork: BaseWork<T>,
 
 }
 
-internal abstract class BaseWorker<T> : Operator<T> {
-    protected var successAction: ParametrizedAction<T>? = null
-    protected var errorAction: ParametrizedAction<Throwable>? = null
-    protected var startDelay = 0L
-    protected var manager: BackgroundWorkManager? = null
+private class WorkerImpl<T>(private val work: BaseWork<T>) : Operator<T> {
 
+    private var successAction: ParametrizedAction<T>? = null
+    private var errorAction: ParametrizedAction<Throwable>? = null
+    private var startDelay = 0L
+    private var manager: BackgroundWorkManager? = null
+
+    override fun <R> transform(context: CoroutineContexts, action: TransformAction<T, R>): Operator<R> {
+        val work = createWork(context) { TransformationWork(work, action, it) }
+        return WorkerImpl(work)
+    }
+
+    override fun operate(context: CoroutineContexts, action: ParametrizedAction<T>): Operator<T> {
+        val work = createWork(context) { OperationWork(work, action, it) }
+        return WorkerImpl(work)
+    }
+
+    private inline fun <R> createWork(context: CoroutineContexts, block: (CoroutineContext) -> BaseWork<R>): BaseWork<R> {
+        val newWork = block(context.context)
+        if (!context.cancellable) { // Only when it is non cancellable, we act
+            // mark all the worker before this non cancellable, so all the jobRef before this transformation
+            // will proper start, so this can properly transform
+            newWork.cancellable = false
+        }
+        return newWork
+    }
     override fun onSuccess(action: ParametrizedAction<T>): Worker<T> {
         if (successAction != null) {
             throw IllegalArgumentException("onSuccess() is called twice")
@@ -88,7 +108,7 @@ internal abstract class BaseWorker<T> : Operator<T> {
                 delay(startDelay)
             }
 
-            onStart(this)
+            startWork(this)
         }
 
         val work = WorkImpl(job)
@@ -96,32 +116,7 @@ internal abstract class BaseWorker<T> : Operator<T> {
         return work
     }
 
-    abstract suspend fun onStart(scope: CoroutineScope)
-}
-
-private class WorkerImpl<T>(private val work: BaseWork<T>) : BaseWorker<T>() {
-
-    override fun <R> transform(context: CoroutineContexts, action: TransformAction<T, R>): Operator<R> {
-        val work = createWork(context) { TransformationWork(work, action, it) }
-        return WorkerImpl(work)
-    }
-
-    override fun operate(context: CoroutineContexts, action: ParametrizedAction<T>): Operator<T> {
-        val work = createWork(context) { OperationWork(work, action, it) }
-        return WorkerImpl(work)
-    }
-
-    private inline fun <R> createWork(context: CoroutineContexts, block: (CoroutineContext) -> BaseWork<R>): BaseWork<R> {
-        val newWork = block(context.context)
-        if (!context.cancellable) { // Only when it is non cancellable, we act
-            // mark all the worker before this non cancellable, so all the jobRef before this transformation
-            // will proper start, so this can properly transform
-            newWork.cancellable = false
-        }
-        return newWork
-    }
-
-    suspend override fun onStart(scope: CoroutineScope) {
+    private suspend fun startWork(scope: CoroutineScope) {
         try {
             val response = work.startWork(scope)
             if (scope.isActive) { // make sure jobRef is not yet cancelled
@@ -129,7 +124,6 @@ private class WorkerImpl<T>(private val work: BaseWork<T>) : BaseWorker<T>() {
                     successAction?.invoke(response)
                 }
             }
-
         } catch(exception: Throwable) {
             if (scope.isActive) { // make sure jobRef is not yet cancelled
                 run(CONTEXT_UI) {

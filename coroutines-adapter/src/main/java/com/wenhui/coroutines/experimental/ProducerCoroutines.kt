@@ -17,10 +17,6 @@ fun <T, R> consumeBy(action: ConsumeAction<T, R>): ConsumerOperator<T, R> {
     return ProducerConsumer(consumer, consumer)
 }
 
-typealias ConsumeAction<T, R> = (T) -> R
-typealias FilterAction<T> = (T) -> Boolean
-
-
 interface Producer<in T> {
 
     /**
@@ -71,6 +67,9 @@ interface ConsumeDelay<T, R> {
 interface ProducerBuilder<T, R> : JobManager<T, R>, Completion<T, R>, ConsumeDelay<T, R> {
     fun build(): Producer<T>
 }
+
+private typealias ConsumeAction<T, R> = (T) -> R
+private typealias FilterAction<T> = (T) -> Boolean
 
 interface ConsumerOperator<T, R> : ProducerBuilder<T, R> {
     /**
