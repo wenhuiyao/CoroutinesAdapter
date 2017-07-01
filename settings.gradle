@@ -1,1 +1,1 @@
-include ':app', ':coroutines-adapter'
+include ':example', ':coroutines-adapter'
