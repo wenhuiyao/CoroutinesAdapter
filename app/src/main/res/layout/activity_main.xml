@@ -5,45 +5,67 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.wenhui.coroutines.example.MainActivity">
+    tools:context="com.wenhui.coroutines.example.MainActivity"
+    tools:layout_editor_absoluteY="81dp"
+    tools:layout_editor_absoluteX="0dp">
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_width="300dp"
+        android:layout_height="39dp"
+        android:text="No background work"
         android:id="@+id/textView"
-        app:layout_constraintVertical_bias="0.432"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="40dp"
+        app:layout_constraintBottom_toTopOf="@+id/simpleBackgroundWorkButton"/>
 
     <ProgressBar
         style="?android:attr/progressBarStyle"
         android:layout_width="wrap_content"
         android:layout_height="54dp"
         android:id="@+id/progressBar"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="8dp"
+        android:layout_marginTop="36dp"
+        android:layout_marginBottom="42dp"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginStart="8dp"
-        android:layout_marginBottom="44dp"
-        app:layout_constraintBottom_toTopOf="@+id/textView"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="8dp"/>
 
     <Button
-        android:text="Button"
+        android:text="Start simple background work"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/button"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/textView"
+        android:id="@+id/simpleBackgroundWorkButton"
+        tools:layout_editor_absoluteY="200dp"
+        tools:layout_editor_absoluteX="63dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="200dp"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <Button
+        android:text="Start producer work"
+        android:layout_width="wrap_content"
+        android:layout_height="51dp"
+        android:id="@+id/producerWorkButton"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="20dp"
+        app:layout_constraintTop_toBottomOf="@+id/simpleBackgroundWorkButton"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginBottom="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginStart="8dp"
-        app:layout_constraintVertical_bias="0.144"/>
+        app:layout_constraintVertical_bias="0.086"/>
+
+    <android.support.constraint.Guideline
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/guideline"
+        app:layout_constraintGuide_begin="20dp"
+        android:orientation="vertical"
+        tools:layout_editor_absoluteY="0dp"
+        tools:layout_editor_absoluteX="20dp"/>
 
 
 </android.support.constraint.ConstraintLayout>
