@@ -72,12 +72,9 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 
 ##### Usage
 ```Groovy
-repositories {
-    maven { url "http://dl.bintray.com/wyao/CoroutinesAdapter" }
-}
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.2.1'
+    compile 'com.wenhui:coroutines-adapter:0.2.2'
 }
 
 ```
