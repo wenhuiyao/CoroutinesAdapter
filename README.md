@@ -5,7 +5,7 @@ Adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) core lib
 
 [Examples usage of the core library](https://github.com/Kotlin/kotlinx.coroutines/blob/master/coroutines-guide.md)
 
-Unfortunately, Kotlin coroutines can only be used directly by Kotlin, so this library is to adapt Kotlin to use by Java.
+Unfortunately, Kotlin coroutines core library can only be used directly by Kotlin, so this library is to adapt Kotlin to use by Java.
 
 NOTE:
 1. Kotlin coroutines is still an experimental feature
@@ -83,13 +83,6 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 
     // When producer is no longer needed
     producer.close();
-```
-
-##### Specific Context when doing operation
-```Java
-1. CONTEXT_BG -> Doing working on background
-2. CONTEXT_UI -> Doing working on UI thread
-3. CONTEXT_NON_CANCELLABLE -> Indicate the work can't be cancelled
 ```
 
 ##### Usage
