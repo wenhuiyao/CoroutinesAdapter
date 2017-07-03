@@ -2,7 +2,6 @@
 
 package com.wenhui.coroutines.experimental
 
-import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.async
 
 /**
@@ -48,21 +47,14 @@ private typealias TriMergeAction<T1, T2, T3, R> = (T1, T2, T3) -> R
 
 
 private class ActionWork<out T>(private val action: Action<T>) : BaseExecutor<T>() {
-
-    suspend override fun execute(scope: CoroutineScope): T {
-        ensureActive(scope)
-        return action()
-    }
+    override suspend fun onExecute(): T = action()
 }
 
 private class Action1Work<T, out R>(
         private val arg: T,
         private val action: TransformAction<T, R>) : BaseExecutor<R>() {
 
-    suspend override fun execute(scope: CoroutineScope): R {
-        ensureActive(scope)
-        return action(arg)
-    }
+    override suspend fun onExecute(): R = action(arg)
 }
 
 private class MergeWork<T1, T2, R>(
@@ -71,11 +63,10 @@ private class MergeWork<T1, T2, R>(
 
     private lateinit var mergeAction: MergeAction<T1, T2, R>
 
-    suspend override fun execute(scope: CoroutineScope): R {
-        ensureActive(scope)
-
-        val result1 = async(scope.context) { action1() }
-        val result2 = async(scope.context) { action2() }
+    override suspend fun onExecute(): R {
+        val context = CONTEXT_BG
+        val result1 = async(context) { action1() }
+        val result2 = async(context) { action2() }
 
         return mergeAction(result1.await(), result2.await())
     }
@@ -91,14 +82,14 @@ private class TriMergeWork<T1, T2, T3, R>(
         private val action2: Action<T2>,
         private val action3: Action<T3>) : TriMerger<T1, T2, T3, R>, BaseExecutor<R>() {
 
+
     private lateinit var mergeAction: TriMergeAction<T1, T2, T3, R>
 
-    suspend override fun execute(scope: CoroutineScope): R {
-        ensureActive(scope)
-
-        val result1 = async(scope.context) { action1() }
-        val result2 = async(scope.context) { action2() }
-        val result3 = async(scope.context) { action3() }
+    suspend override fun onExecute(): R {
+        val context = CONTEXT_BG
+        val result1 = async(context) { action1() }
+        val result2 = async(context) { action2() }
+        val result3 = async(context) { action3() }
 
         return mergeAction(result1.await(), result2.await(), result3.await())
     }

@@ -15,6 +15,13 @@ internal interface Executor<out T> {
  */
 abstract class BaseExecutor<out T> : Executor<T> {
     override var cancellable: Boolean = true
+
+    suspend final override fun execute(scope: CoroutineScope): T {
+        ensureActive(scope)
+        return onExecute()
+    }
+
+    suspend abstract fun onExecute(): T
 }
 
 internal fun <T> Executor<T>.ensureActive(scope: CoroutineScope) {

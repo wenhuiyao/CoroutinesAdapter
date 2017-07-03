@@ -26,7 +26,7 @@ interface WorkCompletion<T, W> {
 }
 
 /**
- * W: The return type after [start], will should normally allow use to cancel
+ * W: The return type after [start], should normally allow use to cancel
  */
 interface WorkStarter<T, W> {
 
@@ -128,14 +128,14 @@ internal abstract class BaseWorker<T, W>(private val work: Executor<T>) : Operat
 
         try {
             val response = work.execute(this)
-            if (isActive) { // make sure jobRef is not yet cancelled
+            if (isActive) { // make sure job is not yet cancelled
                 kotlinx.coroutines.experimental.run(CONTEXT_UI) {
                     successAction?.invoke(response)
                 }
             }
         } catch(exception: Throwable) {
             exception.printStackTrace()
-            if (isActive && exception !is IgnoreException) { // make sure jobRef is not yet cancelled
+            if (isActive && exception !is IgnoreException) { // make sure job is not yet cancelled
                 kotlinx.coroutines.experimental.run(CONTEXT_UI) {
                     errorAction?.invoke(exception)
                 }

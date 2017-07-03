@@ -54,8 +54,7 @@ private class ConsumerImpl<T, R>(private val action: TransformAction<T, R>) : Co
 
     @Volatile private var element: T? = null
 
-    suspend override fun execute(scope: CoroutineScope): R {
-        ensureActive(scope)
+    suspend override fun onExecute(): R {
         element?.let { return action(it) } ?: throw IgnoreException()
     }
 

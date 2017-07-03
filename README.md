@@ -76,7 +76,7 @@ Producer producer = Producers.consumeBy((Integer element) -> {
     }).onError(throwable -> {
         // error callback
         return Unit.INSTANCE;
-    }).build();
+    }).start();
 
     // Now, produce item to be consumed by the above code
     producer.produce(element);
@@ -96,7 +96,7 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 ```Groovy
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.3'
+    compile 'com.wenhui:coroutines-adapter:0.3.1'
 }
 
 ```
