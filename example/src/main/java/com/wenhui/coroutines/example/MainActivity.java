@@ -17,7 +17,7 @@ import kotlin.Unit;
 import java.util.Random;
 
 /**
- * Examples showcase kotlin corotines adapter
+ * Examples showcase kotlin coroutines adapter
  */
 
 public class MainActivity extends FragmentActivity {
@@ -40,34 +40,35 @@ public class MainActivity extends FragmentActivity {
         View button1 = findViewById(R.id.producerWorkButton);
         producer = producer();
         button1.setOnClickListener(v -> {
-            int randomInt = mRandom.nextInt(100);
-            if(!producer.isActive()){
-                producer = producer();
-            }
-            producer.produce(randomInt);
+            onProducerButtonClick();
+        });
+
+        View button2 = findViewById(R.id.simpleMergeWorkButton);
+        button2.setOnClickListener(v -> {
+            onSimpleMergeWorkButtonClick();
+        });
+
+        View cancelButton = findViewById(R.id.cancelButton);
+        cancelButton.setOnClickListener(v -> {
+            mTextView.setText("Cancel current work");
+            cancelCurrentWork();
         });
 
         mTextView = (TextView) findViewById(R.id.textView);
     }
 
     private void onClick() {
-        if (mWorkManager.hasActiveWorks()) {
-            mWorkManager.cancelAllWorks();
-            mTextView.setText("Cancel current work");
-            return;
-        }
+        cancelCurrentWork();
 
-        mTextView.setText("start background work");
+        mTextView.setText("start simple background work");
         Workers.backgroundWork(() -> {
             // simulate intensive work
-            Log.d(TAG, "background work");
             final int sleep = 2000;
             ThreadUtils.sleep(sleep);
             return sleep;
         }).transform(CoroutineContexts.BACKGROUND, data -> {
             // Optionally, transform the data to different data
             // and this is running in background
-            Log.d(TAG, "background transformation");
             ThreadUtils.sleep(1000);
             return "Sleep " + data + " ms";
         }).onSuccess((value) -> {
@@ -82,6 +83,52 @@ public class MainActivity extends FragmentActivity {
 
     }
 
+    private void onSimpleMergeWorkButtonClick() {
+        cancelCurrentWork();
+
+        mTextView.setText("start merge work");
+        Workers.mergeBackgroundWork(() -> {
+            // simulate intensive work
+            final int sleep = 2000;
+            ThreadUtils.sleep(sleep);
+            return sleep;
+        }, () -> {
+            // simulate another intensive work
+            final int sleep = 1000;
+            ThreadUtils.sleep(sleep);
+            return sleep;
+        }).merge((int1, int2) -> {
+            // This block will be executed when both works are completed
+            return int1 + int2;
+        }).transform(CoroutineContexts.BACKGROUND, data -> {
+            // Optionally, transform the data to different data
+            // and this is running in background
+            ThreadUtils.sleep(2000);
+            return "Total sleep " + data + " ms";
+        }).consume(CoroutineContexts.UI, data -> {
+            Toast.makeText(this, data, Toast.LENGTH_SHORT).show();
+            return Unit.INSTANCE;
+        }).onSuccess((value) -> {
+            // This is running on UI thread
+            mTextView.setText(value);
+            return Unit.INSTANCE;
+        }).onError(e -> {
+            Log.d(TAG, "onError");
+            Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            return Unit.INSTANCE;
+        }).start().manageBy(mWorkManager);
+    }
+
+    private void onProducerButtonClick() {
+        cancelCurrentWork();
+        mTextView.setText("Start producer work");
+        int randomInt = mRandom.nextInt(100);
+        if (!producer.isActive()) {
+            producer = producer();
+        }
+        producer.produce(randomInt);
+    }
+
     private Producer<Integer> producer() {
         return Producers.consumeBy((Integer element) -> {
             // do intensive work in the background
@@ -90,11 +137,11 @@ public class MainActivity extends FragmentActivity {
             return result; // result
         }).filter(element -> {
             return element % 2 == 0; // only interesting in any even numbers
-        }).operate(result -> {
+        }).consume(result -> {
             // consume the data, like saving it to database
             ThreadUtils.sleep(200);
             return Unit.INSTANCE; // must return this
-        }).transform(CoroutineContexts.UI, element ->  {
+        }).transform(CoroutineContexts.UI, element -> {
             // optionally, data can be consumed on UI thread
             return "Consume " + element;
         }).onSuccess(element -> {
@@ -102,6 +149,13 @@ public class MainActivity extends FragmentActivity {
             mTextView.setText(element);
             return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
+    }
+
+    private void cancelCurrentWork() {
+        if (mWorkManager.hasActiveWorks()) {
+            mWorkManager.cancelAllWorks();
+            return;
+        }
     }
 
     @Override

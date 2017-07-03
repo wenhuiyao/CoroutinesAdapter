@@ -16,14 +16,15 @@ fun <T> backgroundWork(action: Action<T>) = createBackgroundWork(ActionWork(acti
 fun <T, R> backgroundWork(arg: T, action: TransformAction<T, R>) = createBackgroundWork(Action1Work(arg, action))
 
 /**
- * Create a new background work with two actions, and later two results can be merged
+ * Create a new background work with two actions, and later two results can be merged. The actions are executed in
+ * parallel, so be aware of shared variables
  */
-fun <T1, T2, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>): Merger<T1, T2, R> = MergeActionWork(action1, action2)
+fun <T1, T2, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>): Merger<T1, T2, R> = MergeWork(action1, action2)
 
 /**
  * Create a new background work with three actions, and later three results can be merged
  */
-fun <T1, T2, T3, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>, action3: Action<T3>): TriMerger<T1, T2, T3, R> = TriMergeActionWork(action1, action2, action3)
+fun <T1, T2, T3, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>, action3: Action<T3>): TriMerger<T1, T2, T3, R> = TriMergeWork(action1, action2, action3)
 
 /**
  * Create a new background work start with the _work_
@@ -64,7 +65,7 @@ private class Action1Work<T, out R>(
     }
 }
 
-private class MergeActionWork<T1, T2, R>(
+private class MergeWork<T1, T2, R>(
         private val action1: Action<T1>,
         private val action2: Action<T2>) : Merger<T1, T2, R>, BaseExecutor<R>() {
 
@@ -85,7 +86,7 @@ private class MergeActionWork<T1, T2, R>(
     }
 }
 
-private class TriMergeActionWork<T1, T2, T3, R>(
+private class TriMergeWork<T1, T2, T3, R>(
         private val action1: Action<T1>,
         private val action2: Action<T2>,
         private val action3: Action<T3>) : TriMerger<T1, T2, T3, R>, BaseExecutor<R>() {
@@ -112,8 +113,6 @@ private class WorkerImpl<T>(work: Executor<T>) : BaseWorker<T, Work>(work) {
 
     override fun <R> newWorker(executor: Executor<R>): Operator<R, Work> = WorkerImpl(executor)
 
-    override fun start(): Work = newWork(executeWork(CONTEXT_BG))
+    override fun start(): Work = WorkImpl(executeWork(CONTEXT_BG))
 }
-
-
 

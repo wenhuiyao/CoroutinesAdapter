@@ -13,5 +13,6 @@ import kotlin.coroutines.experimental.CoroutineContext
 enum class CoroutineContexts(internal val context: CoroutineContext, internal val cancellable: Boolean) {
     BACKGROUND(CONTEXT_BG, true),
     UI(CONTEXT_UI, true),
-    NON_CANCELLABLE(CONTEXT_BG, false)
+    // TODO: non cancellable doesn't work when using UI context, will need to experiment more
+//    NON_CANCELLABLE(CONTEXT_BG, false)
 }

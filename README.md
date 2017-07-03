@@ -15,9 +15,9 @@ NOTE:
 ##### Simple background work usage
 
 ```Java
-Work work = background(() -> {
+Work work = Workers.backgroundWork(() -> {
         return doSomeBackgroundWork();
-    }).transform(CONTEXT_BG, (value) -> {
+    }).transform(CoroutineContexts.BACKGROUND, (value) -> {
         // Optionally, transform value to a new value
         return newValue;
     }).onSuccess((value) -> {
@@ -30,6 +30,28 @@ Work work = background(() -> {
 
 // When activity/fragment is destroyed, the work can be canceled to avoid memory leak
 work.cancel();
+
+```
+
+##### Merge multiple background works
+
+```Java
+Work work = Workers.mergeBackgroundWork(() -> {
+        // simulate intensive work
+    }, () -> {
+        // simulate another intensive work
+    }).merge((int1, int2) -> {
+        // This block will be executed when both works are completed
+        return int1 + int2;
+    }).onSuccess((value) -> {
+        // This is running on UI thread
+        mTextView.setText(value);
+        return Unit.INSTANCE;
+    }).onError(e -> {
+        Log.d(TAG, "onError");
+        Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        return Unit.INSTANCE;
+    }).start();
 
 ```
 

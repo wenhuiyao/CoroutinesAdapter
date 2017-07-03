@@ -33,9 +33,7 @@ interface Work {
 
 }
 
-internal fun newWork(job: Job): Work = WorkImpl(job)
-
-private class WorkImpl(private val job: Job) : Work {
+internal class WorkImpl(private val job: Job) : Work {
 
     override val isActive = job.isActive
     override val isCompleted = job.isCompleted

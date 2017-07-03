@@ -25,7 +25,12 @@ interface WorkCompletion<T, W> {
     fun onError(action: ParametrizedAction<Throwable>): Worker<T, W>
 }
 
+/**
+ * W: The return type after [start], will should normally allow use to cancel
+ */
 interface WorkStarter<T, W> {
+
+
     fun setStartDelay(delay: Long): Worker<T, W>
 
     /**
@@ -50,14 +55,14 @@ interface Operator<T, W> : Worker<T, W> {
     fun <R> transform(context: CoroutineContexts, action: TransformAction<T, R>): Operator<R, W>
 
     /**
-     * Operate on the item, by default it is running on the background
+     * Consume the item, by default it is running on the background
      */
-    fun operate(action: ParametrizedAction<T>): Operator<T, W> = operate(CoroutineContexts.BACKGROUND, action)
+    fun consume(action: ParametrizedAction<T>): Operator<T, W> = consume(CoroutineContexts.BACKGROUND, action)
 
     /**
      *  @param context: The context where is transformation will be executed
      */
-    fun operate(context: CoroutineContexts, action: ParametrizedAction<T>): Operator<T, W>
+    fun consume(context: CoroutineContexts, action: ParametrizedAction<T>): Operator<T, W>
 
     /**
      * Filter an item, return `true` is the item is valid, `false` to ignore the item
@@ -82,18 +87,15 @@ internal abstract class BaseWorker<T, W>(private val work: Executor<T>) : Operat
     protected var startDelay = 0L
 
     override fun <R> transform(context: CoroutineContexts, action: TransformAction<T, R>): Operator<R, W> {
-        val executor = Transformation(work, action, context)
-        return newWorker(executor)
+        return newWorker(Transformer(work, action, context))
     }
 
-    override fun operate(context: CoroutineContexts, action: ParametrizedAction<T>): Operator<T, W> {
-        val executor = Operation(work, action, context)
-        return newWorker(executor)
+    override fun consume(context: CoroutineContexts, action: ParametrizedAction<T>): Operator<T, W> {
+        return newWorker(User(work, action, context))
     }
 
     override fun filter(context: CoroutineContexts, action: (T) -> Boolean): Operator<T, W> {
-        val executor = Filtration(work, action, context)
-        return newWorker(executor)
+        return newWorker(Filter(work, action, context))
     }
 
     protected abstract fun <R> newWorker(executor: Executor<R>): Operator<R, W>

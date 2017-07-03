@@ -7,7 +7,6 @@ import kotlinx.coroutines.experimental.Job
  */
 class BackgroundWorkManager {
 
-    private val monitoredJob = Job()
     private val activeJobs = ArrayList<Job>(3)
 
     internal fun manageJob(job: Job) {
@@ -18,7 +17,6 @@ class BackgroundWorkManager {
     }
 
     fun cancelAllWorks() {
-        monitoredJob.cancel()
         for (job in activeJobs) {
             job.cancel()
         }
