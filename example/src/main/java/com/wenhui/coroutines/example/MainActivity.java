@@ -9,15 +9,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.wenhui.coroutines.experimental.BackgroundWorkManager;
 import com.wenhui.coroutines.experimental.CoroutineContexts;
-import com.wenhui.coroutines.experimental.Coroutines;
 import com.wenhui.coroutines.experimental.Producer;
 import com.wenhui.coroutines.experimental.Producers;
+import com.wenhui.coroutines.experimental.Workers;
 import kotlin.Unit;
 
 import java.util.Random;
 
 /**
- * Created by wyao on 6/24/17.
+ * Examples showcase kotlin corotines adapter
  */
 
 public class MainActivity extends FragmentActivity {
@@ -26,6 +26,7 @@ public class MainActivity extends FragmentActivity {
     private BackgroundWorkManager mWorkManager = new BackgroundWorkManager();
     private Random mRandom = new Random(System.currentTimeMillis());
     private TextView mTextView;
+    private Producer<Integer> producer;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -37,9 +38,12 @@ public class MainActivity extends FragmentActivity {
         button.setOnClickListener((v) -> onClick());
 
         View button1 = findViewById(R.id.producerWorkButton);
-        Producer<Integer> producer = producer();
+        producer = producer();
         button1.setOnClickListener(v -> {
             int randomInt = mRandom.nextInt(100);
+            if(!producer.isActive()){
+                producer = producer();
+            }
             producer.produce(randomInt);
         });
 
@@ -54,14 +58,16 @@ public class MainActivity extends FragmentActivity {
         }
 
         mTextView.setText("start background work");
-        Coroutines.backgroundWork(() -> {
+        Workers.backgroundWork(() -> {
             // simulate intensive work
+            Log.d(TAG, "background work");
             final int sleep = 2000;
             ThreadUtils.sleep(sleep);
             return sleep;
         }).transform(CoroutineContexts.BACKGROUND, data -> {
             // Optionally, transform the data to different data
             // and this is running in background
+            Log.d(TAG, "background transformation");
             ThreadUtils.sleep(1000);
             return "Sleep " + data + " ms";
         }).onSuccess((value) -> {
@@ -72,7 +78,7 @@ public class MainActivity extends FragmentActivity {
             Log.d(TAG, "onError");
             Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
             return Unit.INSTANCE;
-        }).setStartDelay(1000).manageBy(mWorkManager).start();
+        }).setStartDelay(1000).start().manageBy(mWorkManager);
 
     }
 
@@ -95,7 +101,7 @@ public class MainActivity extends FragmentActivity {
             // callback on UI thread
             mTextView.setText(element);
             return Unit.INSTANCE;
-        }).manageBy(mWorkManager).build();
+        }).start().manageBy(mWorkManager);
     }
 
     @Override

@@ -15,9 +15,3 @@ enum class CoroutineContexts(internal val context: CoroutineContext, internal va
     UI(CONTEXT_UI, true),
     NON_CANCELLABLE(CONTEXT_BG, false)
 }
-
-internal fun ensureContextCancellable(context: CoroutineContexts) {
-    if (context.cancellable) return
-
-    throw IllegalArgumentException("Please use either ${CoroutineContexts.BACKGROUND.name} or ${CoroutineContexts.UI.name}")
-}
