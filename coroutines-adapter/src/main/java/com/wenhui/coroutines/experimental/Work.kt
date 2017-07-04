@@ -6,7 +6,7 @@ import kotlinx.coroutines.experimental.Job
 /**
  * Represent a background work, which can be [cancel] when needed.
  */
-interface Work {
+interface Work: Manageable<Work> {
 
     /**
      * Returns `true` when this work is active.
@@ -24,12 +24,6 @@ interface Work {
      * cancelled as a result of this invocation and `false` otherwise
      */
     fun cancel(): Boolean
-
-    /**
-     * Allow auto manage by [BackgroundWorkManager], so when [BackgroundWorkManager.cancelAllWorks] is called, the
-     * current work will be cancelled
-     */
-    fun manageBy(manager: BackgroundWorkManager): Work
 
 }
 

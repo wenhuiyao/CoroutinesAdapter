@@ -23,7 +23,7 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): Operator<R, Producer<T>> {
     return ProducerConsumer(consumer, consumer)
 }
 
-interface Producer<in T> {
+interface Producer<T>: Manageable<Producer<T>> {
 
     /**
      * Return `true` is producer is active. The produced item can be consumed only when the state is active
@@ -42,8 +42,6 @@ interface Producer<in T> {
      * Close this producer job, no more item will be accepted, and the state will be inactive at this point
      */
     fun close(reason: Throwable? = null)
-
-    fun manageBy(manager: BackgroundWorkManager): Producer<T>
 }
 
 private interface Consumer<T> {

@@ -11,7 +11,7 @@ internal interface Executor<out T> {
 }
 
 /**
- * The basic building block for a background work.
+ * The basic building block for a background work. The current design can only be used in Kotlin
  */
 abstract class BaseExecutor<out T> : Executor<T> {
     override var cancellable: Boolean = true
@@ -21,6 +21,9 @@ abstract class BaseExecutor<out T> : Executor<T> {
         return onExecute()
     }
 
+    /**
+     * Doing work, and return the result. Throw exception if there is any error.
+     */
     suspend abstract fun onExecute(): T
 }
 
