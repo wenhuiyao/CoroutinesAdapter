@@ -31,11 +31,11 @@ fun <T1, T2, T3, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>
 fun <T> createBackgroundWork(executor: BaseExecutor<T>): Operator<T, Work> = WorkerImpl(executor)
 
 interface Merger<T1, T2, R> {
-    fun merge(action: MergeAction<T1, T2, R>): Operator<R, Work>
+    fun merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work>
 }
 
 interface TriMerger<T1, T2, T3, R> {
-    fun merge(action: TriMergeAction<T1, T2, T3, R>): Operator<R, Work>
+    fun merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work>
 }
 
 /**

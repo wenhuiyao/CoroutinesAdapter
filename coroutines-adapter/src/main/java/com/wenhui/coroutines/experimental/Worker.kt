@@ -134,7 +134,6 @@ internal abstract class BaseWorker<T, W>(private val work: Executor<T>) : Operat
                 }
             }
         } catch(exception: Throwable) {
-            exception.printStackTrace()
             if (isActive && exception !is IgnoreException) { // make sure job is not yet cancelled
                 kotlinx.coroutines.experimental.run(CONTEXT_UI) {
                     errorAction?.invoke(exception)

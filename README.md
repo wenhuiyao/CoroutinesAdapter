@@ -64,7 +64,7 @@ Producer producer = Producers.consumeBy((Integer element) -> {
         return result;
     }).filter(element -> {
         return element % 2 == 0; // only interesting in any even numbers
-    }).operate(result -> {
+    }).consume(result -> {
         // consume the data, e.g. saving it to database
         return Unit.INSTANCE; // must return this
     }).transform(CoroutineContexts.UI, element ->  {
