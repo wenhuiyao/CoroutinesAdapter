@@ -1,104 +1,50 @@
-@file:JvmName("Workers")
 
 package com.wenhui.coroutines.experimental
 
-import kotlinx.coroutines.experimental.async
-import kotlin.coroutines.experimental.CoroutineContext
+import kotlinx.coroutines.experimental.Job
 
 /**
- * Create a new background work with _action_
+ * Utility method to create a new background work
  */
-fun <T> createBackgroundWork(action: Action<T>) = createBackgroundWorkInternal(ActionWork(action))
+internal fun <T> Executor<T>.newWorker(): Operator<T, Work> = WorkerImpl(this)
 
 /**
- * Create a new background work with an action, and an argument that will pass into the action
+ * Represent a background work, which can be [cancel] when needed.
  */
-fun <T, R> createBackgroundWork(arg: T, action: TransformAction<T, R>) = createBackgroundWorkInternal(Action1Work(arg, action))
+interface Work: Manageable<Work> {
 
-/**
- * Create a new background work with two actions, and later two results can be merged. The actions are executed in
- * parallel, so be aware of shared variables
- */
-fun <T1, T2, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>): Merger<T1, T2, R> = MergeWork(action1, action2)
+    /**
+     * Returns `true` when this work is active.
+     */
+    val isActive: Boolean
 
-/**
- * Create a new background work with three actions, and later three results can be merged
- */
-fun <T1, T2, T3, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>, action3: Action<T3>): TriMerger<T1, T2, T3, R> = TriMergeWork(action1, action2, action3)
+    /**
+     * Returns `true` when this work has completed for any reason, even if it is cancelled.
+     */
+    val isCompleted: Boolean
 
-/**
- * Create a new background work start with the _work_
- */
-fun <T> createBackgroundWork(executor: BaseExecutor<T>): Operator<T, Work> = WorkerImpl(executor)
 
-private fun <T> createBackgroundWorkInternal(executor: Executor<T>): Operator<T, Work> = WorkerImpl(executor)
+    /**
+     * Cancel this work. The result is `true` if this work was
+     * cancelled as a result of this invocation and `false` otherwise
+     */
+    fun cancel(): Boolean
 
-interface Merger<T1, T2, R> {
-    fun merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work>
 }
 
-interface TriMerger<T1, T2, T3, R> {
-    fun merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work>
-}
+private class WorkImpl(private val job: Job) : Work {
 
-/**
- * Typical action that start a block of code and return a result
- */
-private typealias Action<T> = () -> T
-private typealias MergeAction<T1, T2, R> = (T1, T2) -> R
-private typealias TriMergeAction<T1, T2, T3, R> = (T1, T2, T3) -> R
+    override val isActive = job.isActive
+    override val isCompleted = job.isCompleted
 
+    override fun cancel() = job.cancel()
 
-private class ActionWork<out T>(private val action: Action<T>) : BaseExecutor<T>() {
-    override fun onExecute(): T = action()
-}
-
-private class Action1Work<T, out R>(
-        private val arg: T,
-        private val action: TransformAction<T, R>) : BaseExecutor<R>() {
-
-    override fun onExecute(): R = action(arg)
-}
-
-private class MergeWork<T1, T2, R>(
-        private val action1: Action<T1>,
-        private val action2: Action<T2>) : Merger<T1, T2, R>, BaseSuspendableExecutor<R>() {
-
-    private lateinit var mergeAction: MergeAction<T1, T2, R>
-
-    override suspend fun onExecute(context: CoroutineContext): R {
-        val result1 = async(context) { action1() }
-        val result2 = async(context) { action2() }
-
-        return mergeAction(result1.await(), result2.await())
-    }
-
-    override fun merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work> {
-        this.mergeAction = mergeAction
-        return createBackgroundWorkInternal(this)
+    override fun manageBy(manager: BackgroundWorkManager): Work {
+        manager.manageJob(job)
+        return this
     }
 }
 
-private class TriMergeWork<T1, T2, T3, R>(
-        private val action1: Action<T1>,
-        private val action2: Action<T2>,
-        private val action3: Action<T3>) : TriMerger<T1, T2, T3, R>, BaseSuspendableExecutor<R>() {
-
-    private lateinit var mergeAction: TriMergeAction<T1, T2, T3, R>
-
-    suspend override fun onExecute(context: CoroutineContext): R {
-        val result1 = async(context) { action1() }
-        val result2 = async(context) { action2() }
-        val result3 = async(context) { action3() }
-
-        return mergeAction(result1.await(), result2.await(), result3.await())
-    }
-
-    override fun merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work> {
-        this.mergeAction = mergeAction
-        return createBackgroundWorkInternal(this)
-    }
-}
 
 private class WorkerImpl<T>(work: Executor<T>) : BaseWorker<T, Work>(work) {
 
