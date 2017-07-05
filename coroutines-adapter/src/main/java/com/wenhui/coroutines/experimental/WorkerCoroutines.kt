@@ -3,16 +3,17 @@
 package com.wenhui.coroutines.experimental
 
 import kotlinx.coroutines.experimental.async
+import kotlin.coroutines.experimental.CoroutineContext
 
 /**
  * Create a new background work with _action_
  */
-fun <T> backgroundWork(action: Action<T>) = createBackgroundWork(ActionWork(action))
+fun <T> backgroundWork(action: Action<T>) = createBackgroundWorkInternal(ActionWork(action))
 
 /**
  * Create a new background work with an action, and an argument that will pass into the action
  */
-fun <T, R> backgroundWork(arg: T, action: TransformAction<T, R>) = createBackgroundWork(Action1Work(arg, action))
+fun <T, R> backgroundWork(arg: T, action: TransformAction<T, R>) = createBackgroundWorkInternal(Action1Work(arg, action))
 
 /**
  * Create a new background work with two actions, and later two results can be merged. The actions are executed in
@@ -28,7 +29,9 @@ fun <T1, T2, T3, R> mergeBackgroundWork(action1: Action<T1>, action2: Action<T2>
 /**
  * Create a new background work start with the _work_
  */
-fun <T> createBackgroundWork(executor: BaseExecutor<T>): Operator<T, Work> = WorkerImpl(executor)
+fun <T> backgroundWork(executor: BaseExecutor<T>): Operator<T, Work> = WorkerImpl(executor)
+
+private fun <T> createBackgroundWorkInternal(executor: Executor<T>): Operator<T, Work> = WorkerImpl(executor)
 
 interface Merger<T1, T2, R> {
     fun merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work>
@@ -47,24 +50,23 @@ private typealias TriMergeAction<T1, T2, T3, R> = (T1, T2, T3) -> R
 
 
 private class ActionWork<out T>(private val action: Action<T>) : BaseExecutor<T>() {
-    override suspend fun onExecute(): T = action()
+    override fun onExecute(): T = action()
 }
 
 private class Action1Work<T, out R>(
         private val arg: T,
         private val action: TransformAction<T, R>) : BaseExecutor<R>() {
 
-    override suspend fun onExecute(): R = action(arg)
+    override fun onExecute(): R = action(arg)
 }
 
 private class MergeWork<T1, T2, R>(
         private val action1: Action<T1>,
-        private val action2: Action<T2>) : Merger<T1, T2, R>, BaseExecutor<R>() {
+        private val action2: Action<T2>) : Merger<T1, T2, R>, BaseSuspendableExecutor<R>() {
 
     private lateinit var mergeAction: MergeAction<T1, T2, R>
 
-    override suspend fun onExecute(): R {
-        val context = CONTEXT_BG
+    override suspend fun onExecute(context: CoroutineContext): R {
         val result1 = async(context) { action1() }
         val result2 = async(context) { action2() }
 
@@ -73,20 +75,18 @@ private class MergeWork<T1, T2, R>(
 
     override fun merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work> {
         this.mergeAction = mergeAction
-        return createBackgroundWork(this)
+        return createBackgroundWorkInternal(this)
     }
 }
 
 private class TriMergeWork<T1, T2, T3, R>(
         private val action1: Action<T1>,
         private val action2: Action<T2>,
-        private val action3: Action<T3>) : TriMerger<T1, T2, T3, R>, BaseExecutor<R>() {
-
+        private val action3: Action<T3>) : TriMerger<T1, T2, T3, R>, BaseSuspendableExecutor<R>() {
 
     private lateinit var mergeAction: TriMergeAction<T1, T2, T3, R>
 
-    suspend override fun onExecute(): R {
-        val context = CONTEXT_BG
+    suspend override fun onExecute(context: CoroutineContext): R {
         val result1 = async(context) { action1() }
         val result2 = async(context) { action2() }
         val result3 = async(context) { action3() }
@@ -96,7 +96,7 @@ private class TriMergeWork<T1, T2, T3, R>(
 
     override fun merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work> {
         this.mergeAction = mergeAction
-        return createBackgroundWork(this)
+        return createBackgroundWorkInternal(this)
     }
 }
 

@@ -7,12 +7,16 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.wenhui.coroutines.example.books.GoogleBooks;
 import com.wenhui.coroutines.experimental.BackgroundWorkManager;
 import com.wenhui.coroutines.experimental.CoroutineContexts;
 import com.wenhui.coroutines.experimental.Producer;
 import com.wenhui.coroutines.experimental.Producers;
 import com.wenhui.coroutines.experimental.Workers;
 import kotlin.Unit;
+import retrofit2.Call;
+import retrofit2.Retrofit;
+import retrofit2.converter.moshi.MoshiConverterFactory;
 
 import java.util.Random;
 
@@ -34,6 +38,8 @@ public class MainActivity extends FragmentActivity {
 
         setContentView(R.layout.activity_main);
 
+        mTextView = (TextView) findViewById(R.id.textView);
+
         View button = findViewById(R.id.simpleBackgroundWorkButton);
         button.setOnClickListener((v) -> onClick());
 
@@ -54,7 +60,11 @@ public class MainActivity extends FragmentActivity {
             cancelCurrentWork();
         });
 
-        mTextView = (TextView) findViewById(R.id.textView);
+        View retrofitButton = findViewById(R.id.retrofitButton);
+        retrofitButton.setOnClickListener(v -> {
+            doRetrofitWork();
+        });
+
     }
 
     private void onClick() {
@@ -156,6 +166,29 @@ public class MainActivity extends FragmentActivity {
             mWorkManager.cancelAllWorks();
             return;
         }
+    }
+
+    private void doRetrofitWork(){
+        mTextView.setText("Start requesting google books");
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://www.googleapis.com")
+                .addConverterFactory(MoshiConverterFactory.create())
+                .build();
+
+        final RetrofitService retrofitService = retrofit.create(RetrofitService.class);
+        final Call<GoogleBooks> call = retrofitService.getGoogleBook("isbn:0747532699");
+
+        // use the custom background work we create
+        Workers.backgroundWork(new RetrofitWork<>(call)).transform(books ->  {
+            return books.getItems().get(0).getVolumeInfo();
+        }).onSuccess(item -> {
+            mTextView.setText(item.getTitle());
+            return Unit.INSTANCE;
+        }).onError(error -> {
+            error.printStackTrace();
+            Toast.makeText(this, "request error", Toast.LENGTH_SHORT).show();
+            return Unit.INSTANCE;
+        }).start().manageBy(mWorkManager);
     }
 
     @Override
