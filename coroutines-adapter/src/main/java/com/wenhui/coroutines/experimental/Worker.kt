@@ -3,6 +3,7 @@ package com.wenhui.coroutines.experimental
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.run
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
@@ -80,22 +81,22 @@ interface Operator<T, W> : Worker<T, W> {
 /**
  * Base worker that doing all the essential works
  */
-internal abstract class BaseWorker<T, W>(private val work: Executor<T>) : Operator<T, W> {
+internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Operator<T, W> {
 
-    protected var successAction: ConsumeAction<T>? = null
-    protected var errorAction: ConsumeAction<Throwable>? = null
-    protected var startDelay = 0L
+    private var successAction: ConsumeAction<T>? = null
+    private var errorAction: ConsumeAction<Throwable>? = null
+    private var startDelay = 0L
 
     override fun <R> transform(context: CoroutineContexts, action: TransformAction<T, R>): Operator<R, W> {
-        return newWorker(Transformer(work, context, action))
+        return newWorker(Transformer(executor, context, action))
     }
 
     override fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Operator<T, W> {
-        return newWorker(User(work, context, action))
+        return newWorker(User(executor, context, action))
     }
 
     override fun filter(context: CoroutineContexts, action: (T) -> Boolean): Operator<T, W> {
-        return newWorker(Filter(work, context, action))
+        return newWorker(Filter(executor, context, action))
     }
 
     protected abstract fun <R> newWorker(executor: Executor<R>): Operator<R, W>
@@ -127,15 +128,15 @@ internal abstract class BaseWorker<T, W>(private val work: Executor<T>) : Operat
         }
 
         try {
-            val response = work.execute(this)
+            val response = executor.execute(this)
             if (isActive) { // make sure job is not yet cancelled
-                kotlinx.coroutines.experimental.run(CONTEXT_UI) {
+                run(CONTEXT_UI) {
                     successAction?.invoke(response)
                 }
             }
         } catch(exception: Throwable) {
             if (isActive && shouldReportException(exception)) { // make sure job is not yet cancelled
-                kotlinx.coroutines.experimental.run(CONTEXT_UI) {
+                run(CONTEXT_UI) {
                     errorAction?.invoke(exception)
                 }
             }
