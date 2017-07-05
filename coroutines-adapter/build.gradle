@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 ext {
-    libraryVersion = "0.3.2"
+    libraryVersion = "0.3.3"
 
     siteUrl = 'https://github.com/wenhuiyao/CoroutinesAdapter' // Homepage URL of the library
     gitUrl = 'https://github.com/wenhuiyao/CoroutinesAdapter.git' // Git repository URL
