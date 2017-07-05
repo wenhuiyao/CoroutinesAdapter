@@ -1,30 +1,27 @@
 # CoroutinesAdapter
-Adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) core library for Java usage.
+
+Kotlin coroutines make asynchronous programming simple and easy, however, it has Kotlin specific keyword that can't be interoped with Java.
+This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) to Java usage.
 
 [Introduction to Kotlin coroutines](https://kotlinlang.org/docs/reference/coroutines.html)
 
 [Examples usage of the core library](https://github.com/Kotlin/kotlinx.coroutines/blob/master/coroutines-guide.md)
 
-Unfortunately, Kotlin coroutines core library can only be used directly by Kotlin, so this library is to adapt Kotlin to use by Java.
 
-NOTE:
-1. Kotlin coroutines is still an experimental feature
-2. All example is written using Java 8 lambda expression, but can be use back to Java 6
-3. The library doesn't cover all the use case of coroutines
-
-##### Simple background work usage
+##### Simple background work
 
 ```Java
-Work work = Workers.backgroundWork(() -> {
+Work work = Workers.createBackgroundWork(() -> {
+        // Do some in the background
         return doSomeBackgroundWork();
     }).transform(CoroutineContexts.BACKGROUND, (value) -> {
-        // Optionally, transform value to a new value
+        // Optionally, transform value to a new value in background
         return newValue;
     }).onSuccess((value) -> {
-        // Do work when background work done. This is running on UI thread
+        // Callback when work is completed successfully. This is happending on UI thread
         return Unit.INSTANCE;
     }).onError(throwable -> {
-        // Do work when background work has exeception. This is running on UI thread
+        // Callback when work has error. This is happening on UI thread
         return Unit.INSTANCE;
     }).setStartDelay(2000).start();
 
@@ -37,25 +34,25 @@ work.cancel();
 
 ```Java
 Work work = Workers.mergeBackgroundWork(() -> {
-        // simulate intensive work
+        // Do some work in background
     }, () -> {
-        // simulate another intensive work
+        // Do another work in background in parallel with the previous work
     }).merge((int1, int2) -> {
         // This block will be executed when both works are completed
         return int1 + int2;
     }).onSuccess((value) -> {
-        // This is running on UI thread
+        // Callback when work is completed successfully. This is happending on UI thread
         mTextView.setText(value);
         return Unit.INSTANCE;
     }).onError(e -> {
-        Log.d(TAG, "onError");
+        // Callback when work is completed successfully. This is happending on UI thread
         Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         return Unit.INSTANCE;
     }).start();
 
 ```
 
-##### Use Producer
+##### Producer
 
 ```Java
 Producer producer = Producers.consumeBy((Integer element) -> {
@@ -89,7 +86,13 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 ```Groovy
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.3.4'
+    compile 'com.wenhui:coroutines-adapter:0.5.0'
 }
 
 ```
+
+
+##### NOTE:
+1. Kotlin coroutines is still an experimental feature
+2. All example is written in Java 8, but can be use back to Java 6
+3. The library doesn't cover all the use cases of coroutines

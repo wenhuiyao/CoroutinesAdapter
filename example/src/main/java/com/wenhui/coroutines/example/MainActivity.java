@@ -71,7 +71,7 @@ public class MainActivity extends FragmentActivity {
         cancelCurrentWork();
 
         mTextView.setText("start simple background work");
-        Workers.backgroundWork(() -> {
+        Workers.createBackgroundWork(() -> {
             // simulate intensive work
             final int sleep = 2000;
             ThreadUtils.sleep(sleep);
@@ -179,7 +179,7 @@ public class MainActivity extends FragmentActivity {
         final Call<GoogleBooks> call = retrofitService.getGoogleBook("isbn:0747532699");
 
         // use the custom background work we create
-        Workers.backgroundWork(new RetrofitWork<>(call)).transform(books ->  {
+        Workers.createBackgroundWork(new RetrofitWork<>(call)).transform(books ->  {
             return books.getItems().get(0).getVolumeInfo();
         }).onSuccess(item -> {
             mTextView.setText(item.getTitle());
