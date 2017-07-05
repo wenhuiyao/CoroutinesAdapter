@@ -8,9 +8,9 @@ import kotlin.coroutines.experimental.CoroutineContext
 /**
  * Transform a value from type T to type R
  */
-internal typealias TransformAction<T, R> = (T) -> R
-internal typealias ConsumeAction<T> = (T) -> Unit
-internal typealias FilterAction<T> = (T) -> Boolean
+typealias TransformAction<T, R> = (T) -> R
+typealias ConsumeAction<T> = (T) -> Unit
+typealias FilterAction<T> = (T) -> Boolean
 
 interface WorkCompletion<T, W> {
 

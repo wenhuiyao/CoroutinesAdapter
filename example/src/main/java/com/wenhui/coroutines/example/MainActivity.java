@@ -41,7 +41,7 @@ public class MainActivity extends FragmentActivity {
         mTextView = (TextView) findViewById(R.id.textView);
 
         View button = findViewById(R.id.simpleBackgroundWorkButton);
-        button.setOnClickListener((v) -> onClick());
+        button.setOnClickListener((v) -> onSimpleBackgroundWorkClick());
 
         View button1 = findViewById(R.id.producerWorkButton);
         button1.setOnClickListener(v -> {
@@ -66,7 +66,10 @@ public class MainActivity extends FragmentActivity {
 
     }
 
-    private void onClick() {
+    /**
+     * Showcase simple background work flow
+     */
+    private void onSimpleBackgroundWorkClick() {
         cancelCurrentWork();
 
         mTextView.setText("start simple background work");
@@ -92,6 +95,9 @@ public class MainActivity extends FragmentActivity {
 
     }
 
+    /**
+     * Showcase merge multiple background works
+     */
     private void onSimpleMergeWorkButtonClick() {
         cancelCurrentWork();
 
@@ -138,6 +144,10 @@ public class MainActivity extends FragmentActivity {
         producer.produce(randomInt);
     }
 
+    /**
+     * Showcase producer work flow
+     * @return
+     */
     private Producer<Integer> producer() {
         return Producers.consumeBy((Integer element) -> {
             // do intensive work in the background
@@ -172,6 +182,9 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
+    /**
+     * Showcase custom background work
+     */
     private void doRetrofitWork(){
         mTextView.setText("Start requesting google books");
         Retrofit retrofit = new Retrofit.Builder()

@@ -6,7 +6,7 @@ import kotlinx.coroutines.experimental.Job
 /**
  * Utility method to create a new background work
  */
-internal fun <T> Executor<T>.newWorker(): Operator<T, Work> = WorkerImpl(this)
+internal fun <T> newWorker(executor: Executor<T>): Operator<T, Work> = WorkerImpl(executor)
 
 /**
  * Represent a background work, which can be [cancel] when needed.

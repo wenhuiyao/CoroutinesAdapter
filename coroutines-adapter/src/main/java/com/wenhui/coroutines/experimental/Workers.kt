@@ -9,17 +9,17 @@ import kotlin.coroutines.experimental.CoroutineContext
 /**
  * Create a new background work with _action_
  */
-fun <T> createBackgroundWork(action: Action<T>) = ActionWork(action).newWorker()
+fun <T> createBackgroundWork(action: Action<T>) = newWorker(ActionWork(action))
 
 /**
  * Create a new background work with an action, and an argument that will pass into the action
  */
-fun <T, R> createBackgroundWork(arg: T, action: TransformAction<T, R>) = Action1Work(arg, action).newWorker()
+fun <T, R> createBackgroundWork(arg: T, action: TransformAction<T, R>) = newWorker(Action1Work(arg, action))
 
 /**
  * Create a new background work start with the _work_
  */
-fun <T> createBackgroundWork(executor: BaseExecutor<T>): Operator<T, Work> = executor.newWorker()
+fun <T> createBackgroundWork(executor: BaseExecutor<T>): Operator<T, Work> = newWorker(executor)
 
 /**
  * Create a new background work with two actions, and later two results can be merged. The actions are executed in
@@ -75,7 +75,7 @@ private class MergeWork<T1, T2, R>(
 
     override fun merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work> {
         this.mergeAction = mergeAction
-        return newWorker()
+        return newWorker(this)
     }
 }
 
@@ -96,6 +96,6 @@ private class TriMergeWork<T1, T2, T3, R>(
 
     override fun merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work> {
         this.mergeAction = mergeAction
-        return newWorker()
+        return newWorker(this)
     }
 }
