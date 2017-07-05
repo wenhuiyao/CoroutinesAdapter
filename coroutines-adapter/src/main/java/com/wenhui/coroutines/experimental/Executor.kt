@@ -34,7 +34,7 @@ abstract class BaseExecutor<out T> : Executor<T> {
 /**
  * The basic building block for a background work. The current design can only be used in Kotlin
  */
-abstract class BaseSuspendableExecutor<out T> : Executor<T> {
+internal abstract class BaseSuspendableExecutor<out T> : Executor<T> {
     override var cancellable: Boolean = true
 
     suspend final override fun execute(scope: CoroutineScope): T {
