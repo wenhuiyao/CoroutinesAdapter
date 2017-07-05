@@ -44,7 +44,6 @@ public class MainActivity extends FragmentActivity {
         button.setOnClickListener((v) -> onClick());
 
         View button1 = findViewById(R.id.producerWorkButton);
-        producer = producer();
         button1.setOnClickListener(v -> {
             onProducerButtonClick();
         });
@@ -54,15 +53,15 @@ public class MainActivity extends FragmentActivity {
             onSimpleMergeWorkButtonClick();
         });
 
+        View retrofitButton = findViewById(R.id.retrofitButton);
+        retrofitButton.setOnClickListener(v -> {
+            doRetrofitWork();
+        });
+
         View cancelButton = findViewById(R.id.cancelButton);
         cancelButton.setOnClickListener(v -> {
             mTextView.setText("Cancel current work");
             cancelCurrentWork();
-        });
-
-        View retrofitButton = findViewById(R.id.retrofitButton);
-        retrofitButton.setOnClickListener(v -> {
-            doRetrofitWork();
         });
 
     }
@@ -133,7 +132,7 @@ public class MainActivity extends FragmentActivity {
         cancelCurrentWork();
         mTextView.setText("Start producer work");
         int randomInt = mRandom.nextInt(100);
-        if (!producer.isActive()) {
+        if (producer == null || !producer.isActive()) {
             producer = producer();
         }
         producer.produce(randomInt);
@@ -143,12 +142,15 @@ public class MainActivity extends FragmentActivity {
         return Producers.consumeBy((Integer element) -> {
             // do intensive work in the background
             ThreadUtils.sleep(1000);
-            int result = element % 5;
-            return result; // result
-        }).filter(element -> {
-            return element % 2 == 0; // only interesting in any even numbers
+            return element % 5; // result
+        }).filter(CoroutineContexts.UI, element -> {
+            boolean pass = element % 2 == 0; // only interesting in any even numbers
+            if (!pass){
+               Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
+            }
+            return pass;
         }).consume(result -> {
-            // consume the data, like saving it to database
+            // consume the data, e.g. save it to database
             ThreadUtils.sleep(200);
             return Unit.INSTANCE; // must return this
         }).transform(CoroutineContexts.UI, element -> {
@@ -158,13 +160,15 @@ public class MainActivity extends FragmentActivity {
             // callback on UI thread
             mTextView.setText(element);
             return Unit.INSTANCE;
+        }).onError(exception -> {
+            Log.d(TAG, "onError: " + exception.getMessage());
+            return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
     }
 
     private void cancelCurrentWork() {
         if (mWorkManager.hasActiveWorks()) {
             mWorkManager.cancelAllWorks();
-            return;
         }
     }
 

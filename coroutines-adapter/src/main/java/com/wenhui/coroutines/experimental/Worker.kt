@@ -9,7 +9,7 @@ import kotlin.coroutines.experimental.CoroutineContext
  * Transform a value from type T to type R
  */
 internal typealias TransformAction<T, R> = (T) -> R
-internal typealias ParametrizedAction<T> = (T) -> Unit
+internal typealias ConsumeAction<T> = (T) -> Unit
 internal typealias FilterAction<T> = (T) -> Boolean
 
 interface WorkCompletion<T, W> {
@@ -17,12 +17,12 @@ interface WorkCompletion<T, W> {
     /**
      * Callback when work succeeded. This is going to be called on UI thread
      */
-    fun onSuccess(action: ParametrizedAction<T>): Worker<T, W>
+    fun onSuccess(action: ConsumeAction<T>): Worker<T, W>
 
     /**
      * Callback when work failed. This is going to be called on UI thread
      */
-    fun onError(action: ParametrizedAction<Throwable>): Worker<T, W>
+    fun onError(action: ConsumeAction<Throwable>): Worker<T, W>
 }
 
 /**
@@ -57,12 +57,12 @@ interface Operator<T, W> : Worker<T, W> {
     /**
      * Consume the item, by default it is running on the background
      */
-    fun consume(action: ParametrizedAction<T>): Operator<T, W> = consume(CoroutineContexts.BACKGROUND, action)
+    fun consume(action: ConsumeAction<T>): Operator<T, W> = consume(CoroutineContexts.BACKGROUND, action)
 
     /**
      *  @param context: The context where is transformation will be executed
      */
-    fun consume(context: CoroutineContexts, action: ParametrizedAction<T>): Operator<T, W>
+    fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Operator<T, W>
 
     /**
      * Filter an item, return `true` is the item is valid, `false` to ignore the item
@@ -82,25 +82,25 @@ interface Operator<T, W> : Worker<T, W> {
  */
 internal abstract class BaseWorker<T, W>(private val work: Executor<T>) : Operator<T, W> {
 
-    protected var successAction: ParametrizedAction<T>? = null
-    protected var errorAction: ParametrizedAction<Throwable>? = null
+    protected var successAction: ConsumeAction<T>? = null
+    protected var errorAction: ConsumeAction<Throwable>? = null
     protected var startDelay = 0L
 
     override fun <R> transform(context: CoroutineContexts, action: TransformAction<T, R>): Operator<R, W> {
-        return newWorker(Transformer(work, action, context))
+        return newWorker(Transformer(work, context, action))
     }
 
-    override fun consume(context: CoroutineContexts, action: ParametrizedAction<T>): Operator<T, W> {
-        return newWorker(User(work, action, context))
+    override fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Operator<T, W> {
+        return newWorker(User(work, context, action))
     }
 
     override fun filter(context: CoroutineContexts, action: (T) -> Boolean): Operator<T, W> {
-        return newWorker(Filter(work, action, context))
+        return newWorker(Filter(work, context, action))
     }
 
     protected abstract fun <R> newWorker(executor: Executor<R>): Operator<R, W>
 
-    override fun onSuccess(action: ParametrizedAction<T>): Worker<T, W> {
+    override fun onSuccess(action: ConsumeAction<T>): Worker<T, W> {
         if (successAction != null) {
             throw IllegalArgumentException("onSuccess() is called twice")
         }
@@ -108,7 +108,7 @@ internal abstract class BaseWorker<T, W>(private val work: Executor<T>) : Operat
         return this
     }
 
-    override fun onError(action: ParametrizedAction<Throwable>): Worker<T, W> {
+    override fun onError(action: ConsumeAction<Throwable>): Worker<T, W> {
         if (errorAction != null) {
             throw IllegalArgumentException("onError() is called twice")
         }
@@ -134,7 +134,7 @@ internal abstract class BaseWorker<T, W>(private val work: Executor<T>) : Operat
                 }
             }
         } catch(exception: Throwable) {
-            if (isActive && exception !is IgnoreException) { // make sure job is not yet cancelled
+            if (isActive && shouldReportException(exception)) { // make sure job is not yet cancelled
                 kotlinx.coroutines.experimental.run(CONTEXT_UI) {
                     errorAction?.invoke(exception)
                 }

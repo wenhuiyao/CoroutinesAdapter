@@ -2,13 +2,11 @@
 
 package com.wenhui.coroutines.experimental
 
-import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlinx.coroutines.experimental.launch
-import kotlin.coroutines.experimental.CoroutineContext
 
 /**
  * Utility method to create a [Producer], and the producer can be reused to execute items by calling [Producer.produce],
@@ -23,7 +21,7 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): Operator<R, Producer<T>> {
     return ProducerConsumer(consumer, consumer)
 }
 
-interface Producer<T>: Manageable<Producer<T>> {
+interface Producer<T> : Manageable<Producer<T>> {
 
     /**
      * Return `true` is producer is active. The produced item can be consumed only when the state is active
@@ -45,33 +43,20 @@ interface Producer<T>: Manageable<Producer<T>> {
 }
 
 private interface Consumer<T> {
-    fun startConsuming(context: CoroutineContext, execute: suspend CoroutineScope.() -> Job): Producer<T>
+    fun consume(element: T)
 }
 
 private class ConsumerImpl<T, R>(private val action: TransformAction<T, R>) : Consumer<T>, BaseExecutor<R>() {
 
     @Volatile private var element: T? = null
 
+    override fun consume(element: T) {
+        this.element = element
+    }
+
     override fun onExecute(): R {
         element?.let { return action(it) } ?: throw IgnoreException()
     }
-
-    override fun startConsuming(context: CoroutineContext, execute: suspend CoroutineScope.() -> Job): Producer<T> {
-        val producer = ProducerImpl<T>()
-        producer.job = launch(context) {
-            var internalJob: Job? = null
-            producer.channel.consumeEach {
-                if (!isActive) return@consumeEach
-
-                // consume the element
-                internalJob?.cancel()
-                element = it
-                internalJob = execute()
-            }
-        }
-        return producer
-    }
-
 }
 
 private class ProducerImpl<T> : Producer<T> {
@@ -104,8 +89,19 @@ private class ProducerConsumer<T, R>(private val consumer: Consumer<T>,
     override fun <M> newWorker(executor: Executor<M>): Operator<M, Producer<T>> = ProducerConsumer(consumer, executor)
 
     override fun start(): Producer<T> {
-        return consumer.startConsuming(CONTEXT_BG) {
-            executeWork(CONTEXT_BG)
+        val producer = ProducerImpl<T>()
+        producer.job = launch(CONTEXT_BG) {
+            var internalJob: Job? = null
+            producer.channel.consumeEach {
+                if (!isActive) return@consumeEach
+
+                // consume the element, but we first need to make sure the current job is cancelled to avoid race
+                // condition since we only have one worker to run
+                internalJob?.cancel()
+                consumer.consume(it)
+                internalJob = executeWork(context)
+            }
         }
+        return producer
     }
 }
