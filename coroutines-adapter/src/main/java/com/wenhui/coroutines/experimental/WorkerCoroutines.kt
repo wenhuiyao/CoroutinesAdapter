@@ -46,7 +46,7 @@ private class WorkImpl(private val job: Job) : Work {
 }
 
 
-private class WorkerImpl<T>(work: Executor<T>) : BaseWorker<T, Work>(work) {
+private class WorkerImpl<T>(executor: Executor<T>) : BaseWorker<T, Work>(executor) {
 
     override fun <R> newWorker(executor: Executor<R>): Operator<R, Work> = WorkerImpl(executor)
 
