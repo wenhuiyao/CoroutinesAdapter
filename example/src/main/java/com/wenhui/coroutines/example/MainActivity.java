@@ -141,12 +141,12 @@ public class MainActivity extends FragmentActivity {
         if (producer == null || !producer.isActive()) {
             producer = producer();
         }
+        // Produce element that will be consumed by the above defined consumer
         producer.produce(randomInt);
     }
 
     /**
      * Showcase producer work flow
-     * @return
      */
     private Producer<Integer> producer() {
         return Producers.consumeBy((Integer element) -> {
@@ -155,22 +155,24 @@ public class MainActivity extends FragmentActivity {
             return element % 5; // result
         }).filter(CoroutineContexts.UI, element -> {
             boolean pass = element % 2 == 0; // only interesting in any even numbers
-            if (!pass){
-               Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
+            if (!pass) {
+                // This is running on UI thread, so we can show toast message
+                Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
             }
             return pass;
         }).consume(result -> {
-            // consume the data, e.g. save it to database
+            // optionally, consume the data, e.g. save it to database
             ThreadUtils.sleep(200);
             return Unit.INSTANCE; // must return this
         }).transform(CoroutineContexts.UI, element -> {
-            // optionally, data can be consumed on UI thread
+            // optionally, data can be transformed on UI thread
             return "Consume " + element;
         }).onSuccess(element -> {
             // callback on UI thread
             mTextView.setText(element);
             return Unit.INSTANCE;
         }).onError(exception -> {
+            // error callback on UI thread
             Log.d(TAG, "onError: " + exception.getMessage());
             return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
