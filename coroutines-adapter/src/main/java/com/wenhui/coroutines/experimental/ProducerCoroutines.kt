@@ -4,7 +4,6 @@ package com.wenhui.coroutines.experimental
 
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.SendChannel
@@ -65,9 +64,10 @@ interface Producer<T> : Manageable<Producer<T>> {
     fun isActive(): Boolean
 
     /**
-     * Produce an item that will be consumed by the consumer(s)
+     * Produce an item that will be consumed by the consumer(s), return `true` if element is added successfully,
+     * `false` if the producer is closed or has error, and no longer accept elements
      */
-    fun produce(element: T)
+    fun produce(element: T): Boolean
 
     /**
      * Close this producer job, no more item will be accepted, and the state will be inactive at this point
@@ -88,9 +88,11 @@ private class ProducerImpl<T>(private val channel: SendChannel<T>,
 
     override fun isActive(): Boolean = job.isActive
 
-    override fun produce(element: T) {
-        launch(Unconfined) {
-            channel.send(element)
+    override fun produce(element: T): Boolean {
+        try {
+            return channel.offer(element)
+        } catch(ignore: Throwable) {
+            return false
         }
     }
 
