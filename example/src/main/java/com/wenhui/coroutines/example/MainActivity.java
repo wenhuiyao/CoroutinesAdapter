@@ -18,8 +18,6 @@ import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.moshi.MoshiConverterFactory;
 
-import java.util.Random;
-
 /**
  * Examples showcase kotlin coroutines adapter
  */
@@ -28,7 +26,6 @@ public class MainActivity extends FragmentActivity {
 
     private static final String TAG = "MainActivity";
     private BackgroundWorkManager mWorkManager = new BackgroundWorkManager();
-    private Random mRandom = new Random(System.currentTimeMillis());
     private TextView mTextView;
     private Producer<Integer> producer;
 
@@ -135,25 +132,25 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void onProducerButtonClick() {
-        cancelCurrentWork();
         mTextView.setText("Start producer work");
 
         if (producer == null || !producer.isActive()) {
             producer = producer();
         }
         // Produce element that will be consumed by the above defined consumer
-        int randomInt = mRandom.nextInt(100);
-        producer.produce(randomInt);
+        for(int i = 0; i < 20; i++) {
+            producer.produce(i);
+        }
     }
 
     /**
      * Showcase producer work flow
      */
     private Producer<Integer> producer() {
-        // You can use Producers.consumeByPool()
+        // You can use Producers.consumeBy() to consume only the last element sent
         return Producers.consumeByPool((Integer element) -> {
             // do intensive work in the background
-            ThreadUtils.sleep(1000);
+            ThreadUtils.sleep(2000);
             return element % 10; // result
         }).filter(CoroutineContexts.UI, element -> {
             boolean pass = element % 2 == 0; // only interesting in any even numbers
@@ -165,7 +162,7 @@ public class MainActivity extends FragmentActivity {
             return pass;
         }).consume(result -> {
             // optionally, consume the data, e.g. save it to database
-            ThreadUtils.sleep(200);
+            ThreadUtils.sleep(300);
             return Unit.INSTANCE; // must return this
         }).transform(CoroutineContexts.UI, element -> {
             // optionally, data can be transformed on UI thread
@@ -173,6 +170,7 @@ public class MainActivity extends FragmentActivity {
         }).onSuccess(element -> {
             // callback on UI thread
             Log.d(TAG, element);
+            mTextView.setText(element);
             return Unit.INSTANCE;
         }).onError(exception -> {
             // error callback on UI thread

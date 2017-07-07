@@ -13,7 +13,7 @@ import kotlinx.coroutines.experimental.launch
 
 
 private typealias ConsumeOp<T, R> = Operator<R, Producer<T>>
-private const val CONSUMER_POOL_SIZE = 4
+private val CONSUMER_POOL_SIZE = THREAD_SIZE * 2 / 3
 
 /**
  * Utility method to create a [Producer], and the producer can be reused to execute items by calling [Producer.produce],
@@ -47,7 +47,7 @@ fun <T, R> consumeByPool(action: TransformAction<T, R>): ConsumeOp<T, R> {
             val consumer = ConsumerImpl(channel, job, action)
             producerConsumers.add(ProducerConsumer(producer, consumer, consumer))
         }
-        ProducerConsumers(producer, producerConsumers)
+        ProducerConsumers(producerConsumers)
     }
 }
 
@@ -75,12 +75,12 @@ interface Producer<T> : Manageable<Producer<T>> {
     fun close(reason: Throwable? = null)
 }
 
-private interface Consumer {
+private interface Consumer<T> {
 
     /**
      * Consume elements, and execute it with _block_ of coroutine code
      */
-    fun consume(block: suspend CoroutineScope.() -> Unit)
+    fun consume(block: suspend CoroutineScope.(T) -> Unit)
 }
 
 private class ProducerImpl<T>(private val channel: SendChannel<T>,
@@ -108,19 +108,19 @@ private class ProducerImpl<T>(private val channel: SendChannel<T>,
 
 private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
                                  private val job: Job,
-                                 private val action: TransformAction<T, R>) : Consumer, BaseExecutor<R>() {
+                                 private val action: TransformAction<T, R>) : Consumer<T>, BaseExecutor<R>() {
 
     @Volatile private var element: T? = null
 
     override fun onExecute(): R {
-        element?.let { return action(it) } ?: throw IgnoreException()
+        element?.let { return action(it) } ?: discontinueExecution()
     }
 
-    override fun consume(block: suspend CoroutineScope.() -> Unit) {
+    override fun consume(block: suspend CoroutineScope.(T) -> Unit) {
         launch(CONTEXT_BG + job) {
             channel.consumeEach {
                 element = it
-                block()
+                block(it)
             }
         }
     }
@@ -138,7 +138,7 @@ private const val CONSUME_POLICY_EACH = 1
 
 
 private class ProducerConsumer<T, R>(private val producer: Producer<T>,
-                                     private val consumer: Consumer,
+                                     private val consumer: Consumer<T>,
                                      executor: Executor<R>) : BaseWorker<R, Producer<T>>(executor) {
 
     var consumePolicy = CONSUME_POLICY_ONLY_LAST
@@ -174,8 +174,7 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
     }
 }
 
-private class ProducerConsumers<T, R>(private val producer: Producer<T>,
-                                      private val consumers: List<ProducerConsumer<T, R>>) : Operator<R, Producer<T>> {
+private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsumer<T, R>>) : Operator<R, Producer<T>> {
 
     override fun <M> transform(context: CoroutineContexts, action: TransformAction<R, M>): Operator<M, Producer<T>> {
         return newInstance { transform(context, action) as ProducerConsumer<T, M> }
@@ -191,7 +190,7 @@ private class ProducerConsumers<T, R>(private val producer: Producer<T>,
 
     private inline fun <M> newInstance(block: ProducerConsumer<T, R>.() -> ProducerConsumer<T, M>): ProducerConsumers<T, M> {
         val list = consumers.map { block(it) }
-        return ProducerConsumers(producer, list)
+        return ProducerConsumers(list)
     }
 
     override fun onSuccess(action: ConsumeAction<R>): Worker<R, Producer<T>> {
@@ -210,10 +209,26 @@ private class ProducerConsumers<T, R>(private val producer: Producer<T>,
     }
 
     override fun start(): Producer<T> {
+        val producers = ArrayList<Producer<T>>(CONSUMER_POOL_SIZE)
         consumers.forEach {
             it.consumePolicy = CONSUME_POLICY_EACH
-            it.start()
+            val producer = it.start()
+            producers.add(producer)
         }
-        return producer
+        return ensureOneProducerAndReturn(producers)
+    }
+
+    /**
+     * Make sure all consumers have the same producer, so they can consume the same pool of items
+     */
+    private fun ensureOneProducerAndReturn(producers: List<Producer<T>>): Producer<T> {
+        val p: Producer<T> = producers.first()
+        val mismatchCount = producers.count { it !== p }
+        if (mismatchCount > 0) {
+            val e = IllegalStateException("Can't start properly, internal producer conflicts")
+            p.close(e)
+            throw e
+        }
+        return p
     }
 }
