@@ -20,7 +20,6 @@ internal abstract class BaseOperator<T, R>(private val dependedExecutor: Executo
 
     suspend override fun execute(scope: CoroutineScope): R {
         val t = dependedExecutor.execute(scope)
-        ensureActive(scope)
         return run(context.context) { onExecute(t) }
     }
 

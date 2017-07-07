@@ -2,6 +2,7 @@
 
 package com.wenhui.coroutines.experimental
 
+import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.async
 import kotlin.coroutines.experimental.CoroutineContext
 
@@ -59,9 +60,8 @@ private class ActionWork<out T>(private val action: Action<T>) : BaseExecutor<T>
 }
 
 private class MultiActionsWork<out T>(private val actions: Array<Action<T>>) : BaseSuspendableExecutor<List<T>>() {
-
-    override suspend fun onExecute(context: CoroutineContext): List<T> {
-        return actions.map { async(context) { it() } }.map { it.await() }
+    suspend override fun execute(scope: CoroutineScope): List<T> {
+        return actions.map { async(scope.context) { it() } }.map { it.await() }
     }
 }
 
@@ -78,7 +78,8 @@ private class MergeWork<T1, T2, R>(
 
     private lateinit var mergeAction: MergeAction<T1, T2, R>
 
-    override suspend fun onExecute(context: CoroutineContext): R {
+    suspend override fun execute(scope: CoroutineScope): R {
+        val context = scope.context
         val result1 = async(context) { action1() }
         val result2 = async(context) { action2() }
 
@@ -98,7 +99,8 @@ private class TriMergeWork<T1, T2, T3, R>(
 
     private lateinit var mergeAction: TriMergeAction<T1, T2, T3, R>
 
-    suspend override fun onExecute(context: CoroutineContext): R {
+    suspend override fun execute(scope: CoroutineScope): R {
+        val context = scope.context
         val result1 = async(context) { action1() }
         val result2 = async(context) { action2() }
         val result3 = async(context) { action3() }
