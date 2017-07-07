@@ -135,17 +135,15 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void onProducerButtonClick() {
-//        cancelCurrentWork();
+        cancelCurrentWork();
         mTextView.setText("Start producer work");
 
         if (producer == null || !producer.isActive()) {
             producer = producer();
         }
         // Produce element that will be consumed by the above defined consumer
-        //        for(int i = 0; i < 10; i++){
         int randomInt = mRandom.nextInt(100);
         producer.produce(randomInt);
-        //        }
     }
 
     /**
@@ -153,7 +151,7 @@ public class MainActivity extends FragmentActivity {
      */
     private Producer<Integer> producer() {
         // You can use Producers.consumeByPool()
-        return Producers.consumeBy((Integer element) -> {
+        return Producers.consumeByPool((Integer element) -> {
             // do intensive work in the background
             ThreadUtils.sleep(1000);
             return element % 10; // result
@@ -161,7 +159,7 @@ public class MainActivity extends FragmentActivity {
             boolean pass = element % 2 == 0; // only interesting in any even numbers
             if (!pass) {
                 // This is running on UI thread, so we can show toast message
-//                Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
                 Log.d(TAG, "filter element: " + element);
             }
             return pass;
@@ -175,7 +173,6 @@ public class MainActivity extends FragmentActivity {
         }).onSuccess(element -> {
             // callback on UI thread
             Log.d(TAG, element);
-//            mTextView.setText(element);
             return Unit.INSTANCE;
         }).onError(exception -> {
             // error callback on UI thread

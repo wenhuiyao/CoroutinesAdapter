@@ -25,8 +25,8 @@ private const val CONSUMER_POOL_SIZE = 4
  */
 fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
     return createConsumeOp { channel, job ->
-        val producer = ProducerJob(channel, job)
-        val consumer = ConsumerJob(channel, job, action)
+        val producer = ProducerImpl(channel, job)
+        val consumer = ConsumerImpl(channel, job, action)
         ProducerConsumer(producer, consumer, consumer)
     }
 }
@@ -37,14 +37,14 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
  * or when using [BackgroundWorkManager], producer will be closed when [BackgroundWorkManager.cancelAllWorks] is called.
  *
  * NOTE: Since all the operators will be shared among consumers in different thread, make sure the operators are
- * stateless
+ * stateless to avoid race condition
  */
 fun <T, R> consumeByPool(action: TransformAction<T, R>): ConsumeOp<T, R> {
     return createConsumeOp { channel, job ->
-        val producer = ProducerJob(channel, job)
+        val producer = ProducerImpl(channel, job)
         val producerConsumers = ArrayList<ProducerConsumer<T, R>>(CONSUMER_POOL_SIZE)
         repeat(CONSUMER_POOL_SIZE) {
-            val consumer = ConsumerJob(channel, job, action)
+            val consumer = ConsumerImpl(channel, job, action)
             producerConsumers.add(ProducerConsumer(producer, consumer, consumer))
         }
         ProducerConsumers(producer, producerConsumers)
@@ -65,10 +65,7 @@ interface Producer<T> : Manageable<Producer<T>> {
     fun isActive(): Boolean
 
     /**
-     * Produce an item that will be consumed by the consumer
-     *
-     * NOTE: the producer will only execute one item at a time, and if an item is received before the previous work
-     * completed, previous work will be cancelled and the current item will be consumed immediately
+     * Produce an item that will be consumed by the consumer(s)
      */
     fun produce(element: T)
 
@@ -86,8 +83,8 @@ private interface Consumer {
     fun consume(block: suspend CoroutineScope.() -> Unit)
 }
 
-private class ProducerJob<T>(private val channel: SendChannel<T>,
-                             private val job: Job) : Producer<T> {
+private class ProducerImpl<T>(private val channel: SendChannel<T>,
+                              private val job: Job) : Producer<T> {
 
     override fun isActive(): Boolean = job.isActive
 
@@ -109,9 +106,9 @@ private class ProducerJob<T>(private val channel: SendChannel<T>,
 
 }
 
-private class ConsumerJob<T, R>(private val channel: ReceiveChannel<T>,
-                                private val job: Job,
-                                private val action: TransformAction<T, R>) : Consumer, BaseExecutor<R>() {
+private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
+                                 private val job: Job,
+                                 private val action: TransformAction<T, R>) : Consumer, BaseExecutor<R>() {
 
     @Volatile private var element: T? = null
 
@@ -132,7 +129,7 @@ private class ConsumerJob<T, R>(private val channel: ReceiveChannel<T>,
 /**
  * This is suitable for single consumer
  */
-private const val CONSUME_POLICY_LAST = 0
+private const val CONSUME_POLICY_LAST_ONLY = 0
 
 /**
  * This is suitable for multiple consumers
@@ -144,7 +141,7 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
                                      private val consumer: Consumer,
                                      executor: Executor<R>) : BaseWorker<R, Producer<T>>(executor) {
 
-    var consumePolicy = CONSUME_POLICY_LAST
+    var consumePolicy = CONSUME_POLICY_EACH
 
     override fun <M> newWorker(executor: Executor<M>): Operator<M, Producer<T>> {
         return ProducerConsumer(producer, consumer, executor)
@@ -153,8 +150,8 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
     override fun start(): Producer<T> {
         when (consumePolicy) {
             CONSUME_POLICY_EACH -> consumeEach()
-            CONSUME_POLICY_LAST -> consumeOnlyLast()
-            else -> throw IllegalArgumentException("Please use either CONSUME_POLICY_EACH or CONSUME_POLICY_LAST")
+            CONSUME_POLICY_LAST_ONLY -> consumeOnlyLast()
+            else -> throw IllegalArgumentException("Please use either CONSUME_POLICY_EACH or CONSUME_POLICY_LAST_ONLY")
         }
         return producer
     }
