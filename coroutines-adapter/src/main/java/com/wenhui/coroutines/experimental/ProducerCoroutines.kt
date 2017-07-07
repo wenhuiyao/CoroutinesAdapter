@@ -129,7 +129,7 @@ private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
 /**
  * This is suitable for single consumer
  */
-private const val CONSUME_POLICY_LAST_ONLY = 0
+private const val CONSUME_POLICY_ONLY_LAST = 0
 
 /**
  * This is suitable for multiple consumers
@@ -141,7 +141,7 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
                                      private val consumer: Consumer,
                                      executor: Executor<R>) : BaseWorker<R, Producer<T>>(executor) {
 
-    var consumePolicy = CONSUME_POLICY_EACH
+    var consumePolicy = CONSUME_POLICY_ONLY_LAST
 
     override fun <M> newWorker(executor: Executor<M>): Operator<M, Producer<T>> {
         return ProducerConsumer(producer, consumer, executor)
@@ -150,8 +150,8 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
     override fun start(): Producer<T> {
         when (consumePolicy) {
             CONSUME_POLICY_EACH -> consumeEach()
-            CONSUME_POLICY_LAST_ONLY -> consumeOnlyLast()
-            else -> throw IllegalArgumentException("Please use either CONSUME_POLICY_EACH or CONSUME_POLICY_LAST_ONLY")
+            CONSUME_POLICY_ONLY_LAST -> consumeOnlyLast()
+            else -> throw IllegalArgumentException("Please use either CONSUME_POLICY_EACH or CONSUME_POLICY_ONLY_LAST")
         }
         return producer
     }
