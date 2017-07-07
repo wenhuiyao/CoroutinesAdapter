@@ -80,6 +80,9 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 
     // When producer is no longer needed
     producer.close();
+
+    // Create a pool of consumers to consume the produce elements
+    Producers.consumeByPool()
 ```
 
 ##### Usage

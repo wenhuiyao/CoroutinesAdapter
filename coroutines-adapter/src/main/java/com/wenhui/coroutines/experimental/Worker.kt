@@ -46,14 +46,14 @@ interface Operator<T, W> : Worker<T, W> {
     /**
      * Transform a source from type T to type R in background thread
      */
-    fun <R> transform(action: TransformAction<T, R>): Operator<R, W> = transform(CoroutineContexts.BACKGROUND, action)
+    fun <M> transform(action: TransformAction<T, M>): Operator<M, W> = transform(CoroutineContexts.BACKGROUND, action)
 
     /**
      * Transform a source from type T to type R
      *
      * @param context: The context where is transformation will be executed
      */
-    fun <R> transform(context: CoroutineContexts, action: TransformAction<T, R>): Operator<R, W>
+    fun <M> transform(context: CoroutineContexts, action: TransformAction<T, M>): Operator<M, W>
 
     /**
      * Consume the item, by default it is running on the background
@@ -87,7 +87,7 @@ internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Op
     private var errorAction: ConsumeAction<Throwable>? = null
     private var startDelay = 0L
 
-    override fun <R> transform(context: CoroutineContexts, action: TransformAction<T, R>): Operator<R, W> {
+    override fun <M> transform(context: CoroutineContexts, action: TransformAction<T, M>): Operator<M, W> {
         return newWorker(Transformer(executor, context, action))
     }
 

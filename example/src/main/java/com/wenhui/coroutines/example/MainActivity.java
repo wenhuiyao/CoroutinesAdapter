@@ -135,29 +135,34 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void onProducerButtonClick() {
-        cancelCurrentWork();
+//        cancelCurrentWork();
         mTextView.setText("Start producer work");
-        int randomInt = mRandom.nextInt(100);
+
         if (producer == null || !producer.isActive()) {
             producer = producer();
         }
         // Produce element that will be consumed by the above defined consumer
+        //        for(int i = 0; i < 10; i++){
+        int randomInt = mRandom.nextInt(100);
         producer.produce(randomInt);
+        //        }
     }
 
     /**
      * Showcase producer work flow
      */
     private Producer<Integer> producer() {
+        // You can use Producers.consumeByPool()
         return Producers.consumeBy((Integer element) -> {
             // do intensive work in the background
             ThreadUtils.sleep(1000);
-            return element % 5; // result
+            return element % 10; // result
         }).filter(CoroutineContexts.UI, element -> {
             boolean pass = element % 2 == 0; // only interesting in any even numbers
             if (!pass) {
                 // This is running on UI thread, so we can show toast message
-                Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
+//                Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "filter element: " + element);
             }
             return pass;
         }).consume(result -> {
@@ -169,7 +174,8 @@ public class MainActivity extends FragmentActivity {
             return "Consume " + element;
         }).onSuccess(element -> {
             // callback on UI thread
-            mTextView.setText(element);
+            Log.d(TAG, element);
+//            mTextView.setText(element);
             return Unit.INSTANCE;
         }).onError(exception -> {
             // error callback on UI thread
@@ -187,7 +193,7 @@ public class MainActivity extends FragmentActivity {
     /**
      * Showcase custom background work
      */
-    private void doRetrofitWork(){
+    private void doRetrofitWork() {
         mTextView.setText("Start requesting google books");
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://www.googleapis.com")
@@ -198,7 +204,7 @@ public class MainActivity extends FragmentActivity {
         final Call<GoogleBooks> call = retrofitService.getGoogleBook("isbn:0747532699");
 
         // use the custom background work we create
-        Workers.createBackgroundWork(new RetrofitWork<>(call)).transform(books ->  {
+        Workers.createBackgroundWork(new RetrofitWork<>(call)).transform(books -> {
             return books.getItems().get(0).getVolumeInfo();
         }).onSuccess(item -> {
             mTextView.setText(item.getTitle());
