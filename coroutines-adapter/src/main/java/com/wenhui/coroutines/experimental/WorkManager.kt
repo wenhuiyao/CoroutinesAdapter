@@ -3,9 +3,9 @@ package com.wenhui.coroutines.experimental
 import kotlinx.coroutines.experimental.Job
 
 /**
- * Manager for background work. Use this to cancel or check background works are active or not
+ * Manager coroutine works. Use this to cancel all the active works.
  */
-class BackgroundWorkManager {
+class WorkManager {
 
     private val activeJobs = ArrayList<Job>(3)
 
@@ -34,8 +34,8 @@ class BackgroundWorkManager {
 interface Manageable<W> {
 
     /**
-     * Allow auto manage by [BackgroundWorkManager], so when [BackgroundWorkManager.cancelAllWorks] is called, the
+     * Allow auto manage by [WorkManager], so when [WorkManager.cancelAllWorks] is called, the
      * current work will be cancelled
      */
-    fun manageBy(manager: BackgroundWorkManager): W
+    fun manageBy(manager: WorkManager): W
 }

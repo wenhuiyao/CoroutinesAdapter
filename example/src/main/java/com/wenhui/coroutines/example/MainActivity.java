@@ -8,7 +8,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.wenhui.coroutines.example.books.GoogleBooks;
-import com.wenhui.coroutines.experimental.BackgroundWorkManager;
+import com.wenhui.coroutines.experimental.WorkManager;
 import com.wenhui.coroutines.experimental.CoroutineContexts;
 import com.wenhui.coroutines.experimental.Producer;
 import com.wenhui.coroutines.experimental.Producers;
@@ -25,7 +25,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory;
 public class MainActivity extends FragmentActivity {
 
     private static final String TAG = "MainActivity";
-    private BackgroundWorkManager mWorkManager = new BackgroundWorkManager();
+    private WorkManager mWorkManager = new WorkManager();
     private TextView mTextView;
     private Producer<Integer> producer;
 

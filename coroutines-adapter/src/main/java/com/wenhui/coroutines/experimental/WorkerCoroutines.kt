@@ -39,7 +39,7 @@ private class WorkImpl(private val job: Job) : Work {
 
     override fun cancel() = job.cancel()
 
-    override fun manageBy(manager: BackgroundWorkManager): Work {
+    override fun manageBy(manager: WorkManager): Work {
         manager.manageJob(job)
         return this
     }
