@@ -89,7 +89,7 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 ```Groovy
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.5.0'
+    compile 'com.wenhui:coroutines-adapter:0.5.1'
 }
 
 ```
