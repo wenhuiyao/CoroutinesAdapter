@@ -50,30 +50,28 @@ interface Operator<T, W> : Worker<T, W> {
 
     /**
      * Transform a source from type T to type R
-     *
      * @param context: The context where is transformation will be executed
      */
     fun <M> transform(context: CoroutineContexts, action: TransformAction<T, M>): Operator<M, W>
 
     /**
-     * Consume the item, by default it is running on the background
+     * Consume the item, by default it is running in the background
      */
     fun consume(action: ConsumeAction<T>): Operator<T, W> = consume(CoroutineContexts.BACKGROUND, action)
 
     /**
-     *  @param context: The context where is transformation will be executed
+     *  @param context: The context where the consume action will be executed
      */
     fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Operator<T, W>
 
     /**
-     * Filter an item, return `true` is the item is valid, `false` to ignore the item
-     * NOTE: the filter action will be running on the same thread as last action whichever that is
+     * Filter an item in background thread, return `true` is the item is valid, `false` to ignore the item
      */
     fun filter(action: FilterAction<T>): Operator<T, W> = filter(CoroutineContexts.BACKGROUND, action)
 
     /**
      * Filter an item, return `true` is the item is valid, `false` to ignore the item
-     * NOTE: the filter action will be running on the same thread as last action whichever that is
+     * @param context: The context where the filter action will be executed
      */
     fun filter(context: CoroutineContexts, action: FilterAction<T>): Operator<T, W>
 }

@@ -99,15 +99,19 @@ public class MainActivity extends FragmentActivity {
         cancelCurrentWork();
 
         mTextView.setText("start merge work");
-        Workers.mergeBackgroundWork(() -> {
+        Workers.mergeBackgroundWorks(() -> {
             // simulate intensive work
             final int sleep = 2000;
+            Log.d(TAG, "start work 1 on thread: " + ThreadUtils.getCurrentThreadName());
             ThreadUtils.sleep(sleep);
+            Log.d(TAG, "end work 1");
             return sleep;
         }, () -> {
             // simulate another intensive work
             final int sleep = 1000;
+            Log.d(TAG, "start work 2 on thread: " + ThreadUtils.getCurrentThreadName());
             ThreadUtils.sleep(sleep);
+            Log.d(TAG, "end work 2");
             return sleep;
         }).merge((int1, int2) -> {
             // This block will be executed when both works are completed
@@ -150,7 +154,9 @@ public class MainActivity extends FragmentActivity {
         // You can use Producers.consumeBy() to consume only the last element sent
         return Producers.consumeByPool((Integer element) -> {
             // do intensive work in the background
+            Log.d(TAG, "Start consumer work (" + element + ") on thread: " + ThreadUtils.getCurrentThreadName());
             ThreadUtils.sleep(2000);
+            Log.d(TAG, "end consumer work (" + element + ")");
             return element % 10; // result
         }).filter(CoroutineContexts.UI, element -> {
             boolean pass = element % 2 == 0; // only interesting in any even numbers
