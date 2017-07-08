@@ -32,10 +32,13 @@ interface Work: Manageable<Work> {
 
 }
 
-private class WorkImpl(private val job: Job) : Work {
+class WorkImpl(val job: Job) : Work {
 
-    override val isActive = job.isActive
-    override val isCompleted = job.isCompleted
+    override val isActive: Boolean
+        get() = job.isActive
+
+    override val isCompleted: Boolean
+        get() = job.isCompleted
 
     override fun cancel() = job.cancel()
 

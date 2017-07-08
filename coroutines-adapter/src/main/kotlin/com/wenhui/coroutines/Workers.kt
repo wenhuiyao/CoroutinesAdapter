@@ -30,20 +30,20 @@ fun <T> createBackgroundWork(executor: BaseExecutor<T>): Operator<T, Work> = new
  * Create a new background work with two actions, and later two results can be merged. The actions are executed in
  * parallel, so be aware of shared variables
  */
-fun <T1, T2, R> mergeBackgroundWorks(action1: Action<T1>, action2: Action<T2>): Merger<T1, T2, R> = MergeWork(action1, action2)
+fun <T1, T2> mergeBackgroundWorks(action1: Action<T1>, action2: Action<T2>): Merger<T1, T2> = MergeWork(action1, action2)
 
 /**
  * Create a new background work with three actions, and later three results can be merged
  */
-fun <T1, T2, T3, R> mergeBackgroundWorks(action1: Action<T1>, action2: Action<T2>, action3: Action<T3>): TriMerger<T1, T2, T3, R> = TriMergeWork(action1, action2, action3)
+fun <T1, T2, T3> mergeBackgroundWorks(action1: Action<T1>, action2: Action<T2>, action3: Action<T3>): TriMerger<T1, T2, T3> = TriMergeWork(action1, action2, action3)
 
 
-interface Merger<T1, T2, R> {
-    fun merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work>
+interface Merger<T1, T2> {
+    fun <R> merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work>
 }
 
-interface TriMerger<T1, T2, T3, R> {
-    fun merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work>
+interface TriMerger<T1, T2, T3> {
+    fun <R> merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work>
 }
 
 /**
@@ -71,44 +71,37 @@ private class TransformActionWork<T, out R>(
     override fun onExecute(): R = action(arg)
 }
 
-private class MergeWork<T1, T2, R>(
-        private val action1: Action<T1>,
-        private val action2: Action<T2>) : Merger<T1, T2, R>, BaseSuspendableExecutor<R>() {
+private class MergeWork<T1, T2>(private val action1: Action<T1>,
+                                private val action2: Action<T2>) : Merger<T1, T2> {
 
-    private lateinit var mergeAction: MergeAction<T1, T2, R>
+    override fun <R> merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work> {
+        return newWorker(object : BaseSuspendableExecutor<R>() {
+            suspend override fun execute(scope: CoroutineScope): R {
+                val context = scope.context
+                val result1 = async(context) { action1() }
+                val result2 = async(context) { action2() }
 
-    suspend override fun execute(scope: CoroutineScope): R {
-        val context = scope.context
-        val result1 = async(context) { action1() }
-        val result2 = async(context) { action2() }
-
-        return mergeAction(result1.await(), result2.await())
-    }
-
-    override fun merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work> {
-        this.mergeAction = mergeAction
-        return newWorker(this)
+                return mergeAction(result1.await(), result2.await())
+            }
+        })
     }
 }
 
-private class TriMergeWork<T1, T2, T3, R>(
-        private val action1: Action<T1>,
-        private val action2: Action<T2>,
-        private val action3: Action<T3>) : TriMerger<T1, T2, T3, R>, BaseSuspendableExecutor<R>() {
+private class TriMergeWork<T1, T2, T3>(private val action1: Action<T1>,
+                                       private val action2: Action<T2>,
+                                       private val action3: Action<T3>) : TriMerger<T1, T2, T3> {
 
-    private lateinit var mergeAction: TriMergeAction<T1, T2, T3, R>
+    override fun <R> merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work> {
+        return newWorker(object : BaseSuspendableExecutor<R>() {
 
-    suspend override fun execute(scope: CoroutineScope): R {
-        val context = scope.context
-        val result1 = async(context) { action1() }
-        val result2 = async(context) { action2() }
-        val result3 = async(context) { action3() }
+            suspend override fun execute(scope: CoroutineScope): R {
+                val context = scope.context
+                val result1 = async(context) { action1() }
+                val result2 = async(context) { action2() }
+                val result3 = async(context) { action3() }
 
-        return mergeAction(result1.await(), result2.await(), result3.await())
-    }
-
-    override fun merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work> {
-        this.mergeAction = mergeAction
-        return newWorker(this)
+                return mergeAction(result1.await(), result2.await(), result3.await())
+            }
+        })
     }
 }

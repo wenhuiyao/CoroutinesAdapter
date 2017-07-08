@@ -33,7 +33,7 @@ work.cancel();
 ##### Merge multiple background works
 
 ```Java
-Work work = Workers.mergeBackgroundWork(() -> {
+Work work = Workers.mergeBackgroundWorks(() -> {
         // Do some work in background
     }, () -> {
         // Do another work in background in parallel with the previous work
@@ -89,7 +89,7 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 ```Groovy
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.5.1'
+    compile 'com.wenhui:coroutines-adapter:0.6.0'
 }
 
 ```
