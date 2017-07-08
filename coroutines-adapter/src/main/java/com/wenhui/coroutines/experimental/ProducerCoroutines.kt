@@ -23,11 +23,10 @@ private val CONSUMER_POOL_SIZE = Math.max(THREAD_SIZE * 2 / 3, 2) // we need min
  * completed, previous work will be cancelled and the current item will be consumed immediately
  */
 fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
-    return createConsumeOp { channel, job ->
-        val producer = ProducerImpl(channel, job)
-        val consumer = ConsumerImpl(channel, job, action)
-        ProducerConsumer(producer, consumer, consumer)
-    }
+    val channel = newChannel<T>()
+    val producer = ProducerImpl(channel)
+    val consumer = ConsumerImpl(channel, action)
+    return ProducerConsumer(producer, consumer, consumer)
 }
 
 /**
@@ -39,22 +38,17 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
  * stateless to avoid race condition
  */
 fun <T, R> consumeByPool(action: TransformAction<T, R>): ConsumeOp<T, R> {
-    return createConsumeOp { channel, job ->
-        val producer = ProducerImpl(channel, job)
-        val producerConsumers = ArrayList<ProducerConsumer<T, R>>(CONSUMER_POOL_SIZE)
-        repeat(CONSUMER_POOL_SIZE) {
-            val consumer = ConsumerImpl(channel, job, action)
-            producerConsumers.add(ProducerConsumer(producer, consumer, consumer))
-        }
-        ProducerConsumers(producerConsumers)
+    val channel = newChannel<T>()
+    val producer = ProducerImpl(channel)
+    val producerConsumers = ArrayList<ProducerConsumer<T, R>>(CONSUMER_POOL_SIZE)
+    repeat(CONSUMER_POOL_SIZE) {
+        val consumer = ConsumerImpl(channel, action)
+        producerConsumers.add(ProducerConsumer(producer, consumer, consumer))
     }
+    return ProducerConsumers(producerConsumers)
 }
 
-private inline fun <T, R> createConsumeOp(block: (Channel<T>, Job) -> ConsumeOp<T, R>): ConsumeOp<T, R> {
-    val channel = Channel<T>(Channel.UNLIMITED)
-    val job = Job() // a job that used to monitor/cancel producer/consumer works
-    return block(channel, job)
-}
+private fun <T> newChannel() = Channel<T>(Channel.UNLIMITED)
 
 interface Producer<T> : Manageable<Producer<T>> {
 
@@ -72,7 +66,7 @@ interface Producer<T> : Manageable<Producer<T>> {
     /**
      * Close this producer job, no more item will be accepted, and the state will be inactive at this point
      */
-    fun close(reason: Throwable? = null)
+    fun close()
 }
 
 private interface Consumer<T> {
@@ -80,13 +74,14 @@ private interface Consumer<T> {
     /**
      * Consume elements, and execute it with _block_ of coroutine code
      */
-    fun consume(block: suspend CoroutineScope.(T) -> Unit)
+    fun consume(block: suspend CoroutineScope.(T) -> Unit): Job
 }
 
-private class ProducerImpl<T>(private val channel: SendChannel<T>,
-                              private val job: Job) : Producer<T> {
+private class ProducerImpl<T>(private val channel: SendChannel<T>) : Producer<T> {
 
-    override fun isActive(): Boolean = job.isActive
+    private val jobs = ArrayList<Job>(CONSUMER_POOL_SIZE)
+
+    override fun isActive(): Boolean = jobs.any { it.isActive }
 
     override fun produce(element: T): Boolean {
         try {
@@ -96,20 +91,23 @@ private class ProducerImpl<T>(private val channel: SendChannel<T>,
         }
     }
 
-    override fun close(reason: Throwable?) {
-        channel.close(reason)
-        job.cancel(reason)
+    override fun close() {
+        channel.close()
+        jobs.forEach { it.cancel() }
+    }
+
+    fun addJob(job: Job) {
+        jobs.add(job)
     }
 
     override fun manageBy(manager: WorkManager): Producer<T> {
-        manager.manageJob(job)
+        jobs.forEach { manager.manageJob(it) }
         return this
     }
 
 }
 
 private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
-                                 private val job: Job,
                                  private val action: TransformAction<T, R>) : Consumer<T>, BaseExecutor<R>() {
 
     @Volatile private var element: T? = null
@@ -118,8 +116,8 @@ private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
         element?.let { return action(it) } ?: discontinueExecution()
     }
 
-    override fun consume(block: suspend CoroutineScope.(T) -> Unit) {
-        launch(CONTEXT_BG + job) {
+    override fun consume(block: suspend CoroutineScope.(T) -> Unit): Job {
+        return launch(CONTEXT_BG) {
             channel.consumeEach {
                 element = it
                 block(it)
@@ -139,7 +137,7 @@ private const val CONSUME_POLICY_ONLY_LAST = 0
 private const val CONSUME_POLICY_EACH = 1
 
 
-private class ProducerConsumer<T, R>(private val producer: Producer<T>,
+private class ProducerConsumer<T, R>(private val producer: ProducerImpl<T>,
                                      private val consumer: Consumer<T>,
                                      executor: Executor<R>) : BaseWorker<R, Producer<T>>(executor) {
 
@@ -150,29 +148,28 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
     }
 
     override fun start(): Producer<T> {
-        when (consumePolicy) {
+        val job = when (consumePolicy) {
             CONSUME_POLICY_EACH -> consumeEach()
             CONSUME_POLICY_ONLY_LAST -> consumeOnlyLast()
             else -> throw IllegalArgumentException("Please use either CONSUME_POLICY_EACH or CONSUME_POLICY_ONLY_LAST")
         }
+        producer.addJob(job)
         return producer
     }
 
-    private fun consumeOnlyLast() {
+    private fun consumeOnlyLast(): Job {
         var internalJob: Job? = null
-        consumer.consume {
-            // consume the element, but we first need to make sure the current job is cancelled to avoid race
-            // condition since we only have one worker to run
+        return consumer.consume {
+            // consume the element, but we first need to make sure the current job is cancelled to avoid race condition
             internalJob?.cancel()
             internalJob = executeWork(context)
         }
     }
 
-    private fun consumeEach() {
-        consumer.consume {
+    private fun consumeEach(): Job {
+        return consumer.consume {
             executeWork(context).join()
         }
-
     }
 }
 
@@ -225,11 +222,9 @@ private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsum
      */
     private fun ensureOneProducerAndReturn(producers: List<Producer<T>>): Producer<T> {
         val p: Producer<T> = producers.first()
-        val mismatchCount = producers.count { it !== p }
-        if (mismatchCount > 0) {
-            val e = IllegalStateException("Can't start properly, internal producer conflicts")
-            p.close(e)
-            throw e
+        if (producers.any { it !== p }) {
+            p.close()
+            throw IllegalStateException("Can't start properly, internal producer conflicts")
         }
         return p
     }

@@ -20,7 +20,9 @@ class WorkManager {
      * Cancel all the works managed by this manager
      */
     fun cancelAllWorks() {
-        for (job in activeJobs) {
+        // must copy the list to avoid ConcurrentModificationException
+        val copy = ArrayList(activeJobs)
+        for (job in copy) {
             job.cancel()
         }
     }
