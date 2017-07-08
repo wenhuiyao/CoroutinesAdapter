@@ -1,4 +1,4 @@
-package com.wenhui.coroutines.experimental
+package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay

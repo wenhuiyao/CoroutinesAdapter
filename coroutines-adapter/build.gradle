@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 ext {
-    libraryVersion = "0.5.2"
+    libraryVersion = "0.6.0"
 
     siteUrl = 'https://github.com/wenhuiyao/CoroutinesAdapter' // Homepage URL of the library
     gitUrl = 'https://github.com/wenhuiyao/CoroutinesAdapter.git' // Git repository URL
@@ -36,6 +36,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
     }
 }
 

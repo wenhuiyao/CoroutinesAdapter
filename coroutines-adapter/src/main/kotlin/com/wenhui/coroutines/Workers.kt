@@ -1,10 +1,9 @@
 @file:JvmName("Workers")
 
-package com.wenhui.coroutines.experimental
+package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.async
-import kotlin.coroutines.experimental.CoroutineContext
 
 
 /**

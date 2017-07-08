@@ -1,4 +1,4 @@
-package com.wenhui.coroutines.experimental
+package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.run
