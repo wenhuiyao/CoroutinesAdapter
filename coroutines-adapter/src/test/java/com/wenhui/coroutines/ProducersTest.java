@@ -13,6 +13,7 @@ import org.robolectric.annotation.Config;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -57,7 +58,7 @@ public class ProducersTest {
             producer.produce(i);
         }
 
-        doneSignal.await(1000, TimeUnit.MILLISECONDS);
+        doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
         assertThat(got.get(), equalTo("Consume 9"));
     }
@@ -66,12 +67,14 @@ public class ProducersTest {
     @Test
     public void testConsumeByPool() throws Exception {
         final int count = 10;
+        final AtomicInteger counter = new AtomicInteger(0);
         final CountDownLatch doneSignal = new CountDownLatch(count);
         final AtomicReference<ArrayList<String>> got = new AtomicReference<>(new ArrayList<String>());
 
         Producer<Integer> producer = Producers.consumeByPool(new Function1<Integer, String>() {
             @Override
             public String invoke(Integer integer) {
+                TestUtils.sleep(100);
                 return String.valueOf(integer);
             }
         }).transform(new Function1<String, String>() {
@@ -83,6 +86,7 @@ public class ProducersTest {
             @Override
             public Unit invoke(String s) {
                 got.get().add(s);
+                counter.incrementAndGet();
                 doneSignal.countDown();
                 return Unit.INSTANCE;
             }
@@ -93,9 +97,11 @@ public class ProducersTest {
             producer.produce(i);
         }
 
-        doneSignal.await(20000, TimeUnit.MILLISECONDS);
+        doneSignal.await(10, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
+        Robolectric.flushBackgroundThreadScheduler();
 
+        assertThat(counter.get(), equalTo(count));
         final ArrayList<String> gots = got.get();
         assertThat(gots.size(), equalTo(count));
 

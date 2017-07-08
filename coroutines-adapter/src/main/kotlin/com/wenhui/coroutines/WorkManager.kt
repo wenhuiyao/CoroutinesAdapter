@@ -1,13 +1,14 @@
 package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.Job
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Manager coroutine works. Use this to cancel all the active works.
+ * Manager of coroutine works. Use this to cancel all the active works.
  */
 class WorkManager {
 
-    private val activeJobs = ArrayList<Job>(3)
+    private val activeJobs = CopyOnWriteArrayList<Job>()
 
     internal fun manageJob(job: Job) {
         job.invokeOnCompletion {
@@ -20,9 +21,7 @@ class WorkManager {
      * Cancel all the works managed by this manager
      */
     fun cancelAllWorks() {
-        // must copy the list to avoid ConcurrentModificationException
-        val copy = ArrayList(activeJobs)
-        for (job in copy) {
+        for (job in activeJobs) {
             job.cancel()
         }
     }
@@ -30,7 +29,8 @@ class WorkManager {
     /**
      * Return `true` if there is at least one active work
      */
-    fun hasActiveWorks() = !activeJobs.isEmpty()
+    fun hasActiveWorks() = activeJobs.any { it.isActive }
+
 }
 
 interface Manageable<W> {

@@ -19,6 +19,8 @@ private val CONSUMER_POOL_SIZE = Math.max(THREAD_SIZE * 2 / 3, 2) // we need min
  * producer will be active until [Producer.close] is called, or when using [WorkManager], producer will be
  * closed when [WorkManager.cancelAllWorks] is called.
  *
+ * Make sure to call [Producer.close] if not use [Producer.manageBy] [WorkManager]
+ *
  * NOTE: the producer will only execute one item at a time, and if an item is received before the previous work
  * completed, previous work will be cancelled and the current item will be consumed immediately
  */
@@ -33,6 +35,8 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
  * Utility method to create a [Producer], whose item will be consumed by a pool of consumers, and the producer can be
  * reused to execute items by calling [Producer.produce], producer will be active until [Producer.close] is called,
  * or when using [WorkManager], producer will be closed when [WorkManager.cancelAllWorks] is called.
+ *
+ * Make sure to call [Producer.close] if not use [Producer.manageBy] [WorkManager]
  *
  * NOTE: Since all the operators will be shared among consumers in different thread, make sure the operators are
  * stateless to avoid race condition

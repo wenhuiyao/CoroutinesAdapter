@@ -14,9 +14,11 @@ import org.robolectric.annotation.Config;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.nullValue;
 
@@ -25,8 +27,152 @@ import static org.hamcrest.core.IsNull.nullValue;
 public class WorkersTest {
 
     @Test
+    public void testCreateBackgroundWork_simpleAction() throws Exception {
+        final AtomicInteger got = new AtomicInteger(0);
+        final CountDownLatch doneSignal = new CountDownLatch(1);
+        Workers.createBackgroundWork(
+                new Function0<Integer>() {
+                    @Override
+                    public Integer invoke() {
+                        TestUtils.sleep(100);
+                        return 1000;
+                    }
+                }
+        ).transform(new Function1<Integer, Integer>() {
+            @Override
+            public Integer invoke(Integer integer) {
+                return integer + 100;
+            }
+        }).onSuccess(new Function1<Integer, Unit>() {
+            @Override
+            public Unit invoke(Integer integer) {
+                got.set(integer);
+                doneSignal.countDown();
+                return Unit.INSTANCE;
+            }
+        }).start();
+
+        assertThat(got.get(), equalTo(0));
+
+        doneSignal.await(1, TimeUnit.SECONDS);
+        Robolectric.flushForegroundThreadScheduler();
+
+        assertThat(got.get(), equalTo(1100));
+    }
+
+    @Test
+    public void testCreateBackgroundWork_simpleAction_cancelByhWorkManager() throws Exception {
+        final AtomicInteger got = new AtomicInteger(0);
+        final CountDownLatch doneSignal = new CountDownLatch(1);
+        final WorkManager workManager = new WorkManager();
+
+        Workers.createBackgroundWork(
+                new Function0<Integer>() {
+                    @Override
+                    public Integer invoke() {
+                        TestUtils.sleep(100);
+                        return 1000;
+                    }
+                }
+        ).transform(new Function1<Integer, Integer>() {
+            @Override
+            public Integer invoke(Integer integer) {
+                return integer + 100;
+            }
+        }).onSuccess(new Function1<Integer, Unit>() {
+            @Override
+            public Unit invoke(Integer integer) {
+                got.set(integer);
+                doneSignal.countDown();
+                return Unit.INSTANCE;
+            }
+        }).start().manageBy(workManager);
+
+        assertThat(got.get(), equalTo(0));
+        assertThat(workManager.hasActiveWorks(), is(true));
+        workManager.cancelAllWorks();
+
+        doneSignal.await(1, TimeUnit.SECONDS);
+        Robolectric.flushForegroundThreadScheduler();
+
+        assertThat(workManager.hasActiveWorks(), is(false));
+        assertThat(got.get(), equalTo(0));
+    }
+
+    @Test
+    public void testCreateBackgroundWork_multipleWorks_cancelByhWorkManager() throws Exception {
+        final int count = 10;
+        final CountDownLatch doneSignal = new CountDownLatch(count);
+        final WorkManager workManager = new WorkManager();
+        final AtomicInteger counter = new AtomicInteger(0);
+
+        for(int i = 0; i < count; i++) {
+            Workers.createBackgroundWork(
+                    new Function0<Integer>() {
+                        @Override
+                        public Integer invoke() {
+                            TestUtils.sleep(200);
+                            counter.incrementAndGet();
+                            return 1000;
+                        }
+                    }
+            ).onSuccess(new Function1<Integer, Unit>() {
+                @Override
+                public Unit invoke(Integer integer) {
+                    doneSignal.countDown();
+                    return null;
+                }
+            }).start().manageBy(workManager);
+        }
+
+        assertThat(counter.get(), is(0));
+        assertThat(workManager.hasActiveWorks(), is(true));
+
+        // deliberately wait for several seconds for all the job to be finished
+        doneSignal.await(4, TimeUnit.SECONDS);
+        Robolectric.flushForegroundThreadScheduler();
+        Robolectric.flushBackgroundThreadScheduler();
+
+        assertThat(counter.get(), is(count));
+        assertThat(workManager.hasActiveWorks(), is(false));
+    }
+
+    @Test
+    public void testCreateBackgroundWork_actionWithParam() throws Exception {
+        final AtomicInteger got = new AtomicInteger(0);
+        final CountDownLatch doneSignal = new CountDownLatch(1);
+        Workers.createBackgroundWork("1000",
+                new Function1<String, Integer>() {
+                    @Override
+                    public Integer invoke(String integer) {
+                        return Integer.parseInt(integer);
+                    }
+                }
+        ).transform(new Function1<Integer, Integer>() {
+            @Override
+            public Integer invoke(Integer integer) {
+                return integer + 100;
+            }
+        }).onSuccess(new Function1<Integer, Unit>() {
+            @Override
+            public Unit invoke(Integer integer) {
+                got.set(integer);
+                doneSignal.countDown();
+                return Unit.INSTANCE;
+            }
+        }).start();
+
+        assertThat(got.get(), equalTo(0));
+
+        doneSignal.await(1, TimeUnit.SECONDS);
+        Robolectric.flushForegroundThreadScheduler();
+
+        assertThat(got.get(), equalTo(1100));
+    }
+
+    @Test
     public void testCreateBackgroundWorks_multipleActions() throws Exception {
-        final AtomicReference<Integer> got = new AtomicReference<>();
+        final AtomicInteger got = new AtomicInteger(0);
         final CountDownLatch doneSignal = new CountDownLatch(1);
         Workers.createBackgroundWorks(
                 new Function0<Integer>() {
@@ -61,9 +207,9 @@ public class WorkersTest {
             }
         }).start();
 
-        assertThat(got.get(), nullValue());
+        assertThat(got.get(), equalTo(0));
 
-        doneSignal.await(1000, TimeUnit.MILLISECONDS);
+        doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
         assertThat(got.get(), equalTo(3000));
     }
@@ -108,7 +254,7 @@ public class WorkersTest {
 
         assertThat(got.get(), nullValue());
 
-        doneSignal.await(1000, TimeUnit.MILLISECONDS);
+        doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
 
         assertThat(got.get(), equalTo("Merge 100"));
