@@ -7,12 +7,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.wenhui.coroutines.Producers;
-import com.wenhui.coroutines.Workers;
-import com.wenhui.coroutines.example.books.GoogleBooks;
-import com.wenhui.coroutines.WorkManager;
 import com.wenhui.coroutines.CoroutineContexts;
 import com.wenhui.coroutines.Producer;
+import com.wenhui.coroutines.Producers;
+import com.wenhui.coroutines.WorkManager;
+import com.wenhui.coroutines.Workers;
+import com.wenhui.coroutines.example.books.GoogleBooks;
 import kotlin.Unit;
 import retrofit2.Call;
 import retrofit2.Retrofit;
@@ -142,7 +142,7 @@ public class MainActivity extends FragmentActivity {
             producer = producer();
         }
         // Produce element that will be consumed by the above defined consumer
-        for(int i = 0; i < 20; i++) {
+        for (int i = 0; i < 20; i++) {
             producer.produce(i);
         }
     }
