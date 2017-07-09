@@ -12,7 +12,7 @@ import kotlinx.coroutines.experimental.launch
 
 
 private typealias ConsumeOp<T, R> = Operator<R, Producer<T>>
-private val CONSUMER_POOL_SIZE = Math.max(THREAD_SIZE * 2 / 3, 2) // we need minimum of 2 threads to be a pool
+private val CONSUMER_POOL_SIZE = Math.max(THREAD_SIZE - 1, 2)
 
 /**
  * Utility method to create a [Producer], and the producer can be reused to execute items by calling [Producer.produce],
