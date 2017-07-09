@@ -78,8 +78,6 @@ class WorkerCoroutinesTest {
 
 
     private class TestExecutor<T>(private val t: T) : Executor<T> {
-        override var cancellable = true
-
         suspend override fun execute(scope: CoroutineScope): T {
             Thread.sleep(100)
             return t

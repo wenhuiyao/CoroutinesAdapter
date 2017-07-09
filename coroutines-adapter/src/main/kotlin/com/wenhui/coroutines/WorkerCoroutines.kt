@@ -1,4 +1,3 @@
-
 package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.Job
@@ -11,7 +10,7 @@ internal fun <T> newWorker(executor: Executor<T>): Operator<T, Work> = WorkerImp
 /**
  * Represent a background work, which can be [cancel] when needed.
  */
-interface Work: Manageable<Work> {
+interface Work : Manageable<Work> {
 
     /**
      * Returns `true` when this work is active.
@@ -34,11 +33,9 @@ interface Work: Manageable<Work> {
 
 class WorkImpl(val job: Job) : Work {
 
-    override val isActive: Boolean
-        get() = job.isActive
+    override val isActive: Boolean get() = job.isActive
 
-    override val isCompleted: Boolean
-        get() = job.isCompleted
+    override val isCompleted: Boolean get() = job.isCompleted
 
     override fun cancel() = job.cancel()
 

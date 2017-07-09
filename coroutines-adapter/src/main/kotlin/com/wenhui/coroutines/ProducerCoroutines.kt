@@ -26,8 +26,9 @@ private val CONSUMER_POOL_SIZE = Math.max(THREAD_SIZE * 2 / 3, 2) // we need min
  */
 fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
     val channel = newChannel<T>()
-    val producer = ProducerImpl(channel)
-    val consumer = ConsumerImpl(channel, action)
+    val parentJob = parentJob()
+    val producer = ProducerImpl(channel, parentJob)
+    val consumer = ConsumerImpl(channel, parentJob, action)
     return ProducerConsumer(producer, consumer, consumer)
 }
 
@@ -43,16 +44,18 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
  */
 fun <T, R> consumeByPool(action: TransformAction<T, R>): ConsumeOp<T, R> {
     val channel = newChannel<T>()
-    val producer = ProducerImpl(channel)
+    val parentJob = parentJob()
+    val producer = ProducerImpl(channel, parentJob)
     val producerConsumers = ArrayList<ProducerConsumer<T, R>>(CONSUMER_POOL_SIZE)
     repeat(CONSUMER_POOL_SIZE) {
-        val consumer = ConsumerImpl(channel, action)
+        val consumer = ConsumerImpl(channel, parentJob, action)
         producerConsumers.add(ProducerConsumer(producer, consumer, consumer))
     }
     return ProducerConsumers(producerConsumers)
 }
 
 private fun <T> newChannel() = Channel<T>(Channel.UNLIMITED)
+private fun parentJob(): Job = Job()
 
 interface Producer<T> : Manageable<Producer<T>> {
 
@@ -76,18 +79,23 @@ interface Producer<T> : Manageable<Producer<T>> {
 private interface Consumer<T> {
 
     /**
-     * Consume elements, and execute it with _block_ of coroutine code
+     * Consume elements, and execute it with [block] of coroutine code
      */
     fun consume(block: suspend CoroutineScope.(T) -> Unit): Job
 }
 
-private class ProducerImpl<T>(private val channel: SendChannel<T>) : Producer<T> {
+private class ProducerImpl<T>(private val channel: SendChannel<T>,
+                              private val parentJob: Job) : Producer<T> {
 
-    private val jobs = ArrayList<Job>(CONSUMER_POOL_SIZE)
-
-    override fun isActive(): Boolean = jobs.any { it.isActive }
+    override fun isActive(): Boolean = parentJob.isActive && !channel.isClosedForSend
 
     override fun produce(element: T): Boolean {
+        if (!parentJob.isActive) {
+            if (!channel.isClosedForSend) {
+                channel.close()
+            }
+            return false
+        }
         try {
             return channel.offer(element)
         } catch(ignore: Throwable) {
@@ -97,21 +105,18 @@ private class ProducerImpl<T>(private val channel: SendChannel<T>) : Producer<T>
 
     override fun close() {
         channel.close()
-        jobs.forEach { it.cancel() }
-    }
-
-    fun addJob(job: Job) {
-        jobs.add(job)
+        parentJob.cancel()
     }
 
     override fun manageBy(manager: WorkManager): Producer<T> {
-        jobs.forEach { manager.manageJob(it) }
+        manager.manageJob(parentJob)
         return this
     }
 
 }
 
 private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
+                                 private val parentJob: Job,
                                  private val action: TransformAction<T, R>) : Consumer<T>, BaseExecutor<R>() {
 
     @Volatile private var element: T? = null
@@ -121,7 +126,7 @@ private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
     }
 
     override fun consume(block: suspend CoroutineScope.(T) -> Unit): Job {
-        return launch(CONTEXT_BG) {
+        return launch(CONTEXT_BG + parentJob) {
             channel.consumeEach {
                 element = it
                 block(it)
@@ -141,7 +146,7 @@ private const val CONSUME_POLICY_ONLY_LAST = 0
 private const val CONSUME_POLICY_EACH = 1
 
 
-private class ProducerConsumer<T, R>(private val producer: ProducerImpl<T>,
+private class ProducerConsumer<T, R>(private val producer: Producer<T>,
                                      private val consumer: Consumer<T>,
                                      executor: Executor<R>) : BaseWorker<R, Producer<T>>(executor) {
 
@@ -152,12 +157,11 @@ private class ProducerConsumer<T, R>(private val producer: ProducerImpl<T>,
     }
 
     override fun start(): Producer<T> {
-        val job = when (consumePolicy) {
+        when (consumePolicy) {
             CONSUME_POLICY_EACH -> consumeEach()
             CONSUME_POLICY_ONLY_LAST -> consumeOnlyLast()
             else -> throw IllegalArgumentException("Please use either CONSUME_POLICY_EACH or CONSUME_POLICY_ONLY_LAST")
         }
-        producer.addJob(job)
         return producer
     }
 
@@ -215,8 +219,7 @@ private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsum
         val producers = ArrayList<Producer<T>>(CONSUMER_POOL_SIZE)
         consumers.forEach {
             it.consumePolicy = CONSUME_POLICY_EACH
-            val producer = it.start()
-            producers.add(producer)
+            producers.add(it.start())
         }
         return ensureOneProducerAndReturn(producers)
     }
