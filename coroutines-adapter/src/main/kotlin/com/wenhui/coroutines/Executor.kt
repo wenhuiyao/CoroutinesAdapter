@@ -1,6 +1,5 @@
 package com.wenhui.coroutines
 
-import kotlinx.coroutines.experimental.CancellationException
 import kotlinx.coroutines.experimental.CoroutineScope
 
 internal interface Executor<out T> {
@@ -38,4 +37,4 @@ internal fun shouldReportException(exception: Throwable): Boolean = exception !i
 /**
  * Exception indicates the operation should be ignored
  */
-internal class IgnoreException(message: String = "") : Exception(message)
+internal class IgnoreException(message: String = "Ignore this execution") : Exception(message)

@@ -12,6 +12,7 @@ class WorkManager {
 
     internal fun manageJob(job: Job) {
         job.invokeOnCompletion {
+            // This may be called from different thread, so it is important to keep it synchronous
             activeJobs.remove(job)
         }
         activeJobs.add(job)
@@ -21,9 +22,7 @@ class WorkManager {
      * Cancel all the works managed by this manager
      */
     fun cancelAllWorks() {
-        for (job in activeJobs) {
-            job.cancel()
-        }
+        activeJobs.forEach { it.cancel() }
     }
 
     /**

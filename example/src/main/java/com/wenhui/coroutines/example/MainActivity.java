@@ -80,9 +80,6 @@ public class MainActivity extends FragmentActivity {
             // and this is running in background
             ThreadUtils.sleep(1000);
             return "Sleep " + data + " ms";
-        }).consume(CoroutineContexts.NON_CANCELLABLE, data -> {
-            Log.d(TAG, "consume data: " + data);
-            return Unit.INSTANCE;
         }).onSuccess((value) -> {
             // This is running on UI thread
             mTextView.setText(value);

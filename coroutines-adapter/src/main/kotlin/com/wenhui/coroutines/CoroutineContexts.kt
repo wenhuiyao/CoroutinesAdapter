@@ -11,7 +11,7 @@ internal val THREAD_SIZE = Math.min(6, 2 * Runtime.getRuntime().availableProcess
 internal val CONTEXT_BG = newFixedThreadPoolContext(THREAD_SIZE, "background")
 internal val CONTEXT_UI = UI
 
-enum class CoroutineContexts(internal val context: CoroutineContext, internal val cancellable: Boolean) {
-    BACKGROUND(CONTEXT_BG, true),
-    UI(CONTEXT_UI, true),
+enum class CoroutineContexts(internal val context: CoroutineContext) {
+    BACKGROUND(CONTEXT_BG),
+    UI(CONTEXT_UI)
 }

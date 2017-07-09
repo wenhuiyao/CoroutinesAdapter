@@ -9,9 +9,9 @@ import kotlin.coroutines.experimental.CoroutineContext
 /**
  * Transform a value from type T to type R
  */
-typealias TransformAction<T, R> = (T) -> R
-typealias ConsumeAction<T> = (T) -> Unit
-typealias FilterAction<T> = (T) -> Boolean
+internal typealias TransformAction<T, R> = (T) -> R
+internal typealias ConsumeAction<T> = (T) -> Unit
+internal typealias FilterAction<T> = (T) -> Boolean
 
 interface WorkCompletion<T, W> {
 
@@ -97,6 +97,9 @@ internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Op
         return newWorker(Filter(executor, context, action))
     }
 
+    /**
+     * Create a new instance of a Worker, most likely, it is a new instance of itself
+     */
     protected abstract fun <R> newWorker(executor: Executor<R>): Operator<R, W>
 
     override fun onSuccess(action: ConsumeAction<T>): Worker<T, W> {
@@ -121,22 +124,16 @@ internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Op
     }
 
     protected fun executeWork(context: CoroutineContext): Job = launch(context) {
-        if (startDelay > 0) {
-            delay(startDelay)
-        }
+        if (startDelay > 0) delay(startDelay)
 
         try {
             val response = executor.execute(this)
             if (isActive) { // make sure job is not yet cancelled
-                run(CONTEXT_UI) {
-                    successAction?.invoke(response)
-                }
+                successAction?.let { run(CONTEXT_UI) { it(response) } }
             }
         } catch(exception: Throwable) {
             if (isActive && shouldReportException(exception)) { // make sure job is not yet cancelled
-                run(CONTEXT_UI) {
-                    errorAction?.invoke(exception)
-                }
+                errorAction?.let { run(CONTEXT_UI) { it(exception) } }
             }
         }
     }
