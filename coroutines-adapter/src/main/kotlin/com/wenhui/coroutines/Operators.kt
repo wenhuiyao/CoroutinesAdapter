@@ -6,18 +6,6 @@ import kotlinx.coroutines.experimental.run
 internal abstract class BaseOperator<T, R>(private val dependedExecutor: Executor<T>,
                                            private val context: CoroutineContexts) : Executor<R> {
 
-    override var cancellable: Boolean = true
-        set(value) {
-            field = value
-            dependedExecutor.cancellable = value
-        }
-
-    init {
-        if (!context.cancellable) {
-            cancellable = false
-        }
-    }
-
     suspend override fun execute(scope: CoroutineScope): R {
         val t = dependedExecutor.execute(scope)
         return run(context.context) { onExecute(t) }

@@ -58,7 +58,7 @@ private class ActionWork<out T>(private val action: Action<T>) : BaseExecutor<T>
     override fun onExecute(): T = action()
 }
 
-private class MultiActionsWork<out T>(private val actions: Array<Action<T>>) : BaseSuspendableExecutor<List<T>>() {
+private class MultiActionsWork<out T>(private val actions: Array<Action<T>>) : Executor<List<T>> {
     suspend override fun execute(scope: CoroutineScope): List<T> {
         return actions.map { async(scope.context) { it() } }.map { it.await() }
     }
@@ -75,7 +75,7 @@ private class MergeWork<T1, T2>(private val action1: Action<T1>,
                                 private val action2: Action<T2>) : Merger<T1, T2> {
 
     override fun <R> merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work> {
-        return newWorker(object : BaseSuspendableExecutor<R>() {
+        return newWorker(object : Executor<R> {
             suspend override fun execute(scope: CoroutineScope): R {
                 val context = scope.context
                 val result1 = async(context) { action1() }
@@ -92,8 +92,7 @@ private class TriMergeWork<T1, T2, T3>(private val action1: Action<T1>,
                                        private val action3: Action<T3>) : TriMerger<T1, T2, T3> {
 
     override fun <R> merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work> {
-        return newWorker(object : BaseSuspendableExecutor<R>() {
-
+        return newWorker(object : Executor<R> {
             suspend override fun execute(scope: CoroutineScope): R {
                 val context = scope.context
                 val result1 = async(context) { action1() }

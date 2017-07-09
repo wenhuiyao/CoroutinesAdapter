@@ -14,6 +14,4 @@ internal val CONTEXT_UI = UI
 enum class CoroutineContexts(internal val context: CoroutineContext, internal val cancellable: Boolean) {
     BACKGROUND(CONTEXT_BG, true),
     UI(CONTEXT_UI, true),
-    // TODO: non cancellable doesn't work when using UI context, will need to experiment more
-//    NON_CANCELLABLE(CONTEXT_BG, false)
 }
