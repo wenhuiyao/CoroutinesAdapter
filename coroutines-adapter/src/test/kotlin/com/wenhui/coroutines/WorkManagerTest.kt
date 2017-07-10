@@ -18,21 +18,21 @@ class WorkManagerTest {
 
     @Test
     fun testHaveActiveWorks_empty() {
-        assertThat(workManager.hasActiveWorks(), `is`(false))
+        assertThat(workManager.hasActiveWork(), `is`(false))
     }
 
     @Test
     fun testHaveActiveWorks_1() {
         addJobToManager()
 
-        assertThat(workManager.hasActiveWorks(), `is`(true))
+        assertThat(workManager.hasActiveWork(), `is`(true))
     }
 
     @Test
     fun testHaveActiveWorks_many() {
         addJobToManager()
         addJobToManager()
-        assertThat(workManager.hasActiveWorks(), `is`(true))
+        assertThat(workManager.hasActiveWork(), `is`(true))
     }
 
     @Test
@@ -41,10 +41,10 @@ class WorkManagerTest {
         addJobToManager()
         addJobToManager()
 
-        assertThat(workManager.hasActiveWorks(), `is`(true))
+        assertThat(workManager.hasActiveWork(), `is`(true))
         workManager.cancelAllWorks()
 
-        assertThat(workManager.hasActiveWorks(), `is`(false))
+        assertThat(workManager.hasActiveWork(), `is`(false))
     }
 
     private fun addJobToManager() {

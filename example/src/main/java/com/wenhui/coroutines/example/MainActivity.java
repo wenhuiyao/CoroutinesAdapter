@@ -186,7 +186,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void cancelCurrentWork() {
-        if (mWorkManager.hasActiveWorks()) {
+        if (mWorkManager.hasActiveWork()) {
             mWorkManager.cancelAllWorks();
         }
     }

@@ -89,13 +89,13 @@ public class WorkersTest {
         }).start().manageBy(workManager);
 
         assertThat(got.get(), equalTo(0));
-        assertThat(workManager.hasActiveWorks(), is(true));
+        assertThat(workManager.hasActiveWork(), is(true));
         workManager.cancelAllWorks();
 
         doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
 
-        assertThat(workManager.hasActiveWorks(), is(false));
+        assertThat(workManager.hasActiveWork(), is(false));
         assertThat(got.get(), equalTo(0));
     }
 
@@ -126,7 +126,7 @@ public class WorkersTest {
         }
 
         assertThat(counter.get(), is(0));
-        assertThat(workManager.hasActiveWorks(), is(true));
+        assertThat(workManager.hasActiveWork(), is(true));
 
         // deliberately wait for several seconds for all the job to be finished
         doneSignal.await(4, TimeUnit.SECONDS);
@@ -134,7 +134,7 @@ public class WorkersTest {
         Robolectric.flushBackgroundThreadScheduler();
 
         assertThat(counter.get(), is(count));
-        assertThat(workManager.hasActiveWorks(), is(false));
+        assertThat(workManager.hasActiveWork(), is(false));
     }
 
     @Test

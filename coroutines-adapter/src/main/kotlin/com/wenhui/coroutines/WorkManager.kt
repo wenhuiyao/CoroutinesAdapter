@@ -28,7 +28,7 @@ class WorkManager {
     /**
      * Return `true` if there is at least one active work
      */
-    fun hasActiveWorks() = activeJobs.any { it.isActive }
+    fun hasActiveWork() = activeJobs.any { it.isActive }
 
 }
 

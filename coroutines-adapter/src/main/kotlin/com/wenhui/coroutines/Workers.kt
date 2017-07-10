@@ -14,7 +14,8 @@ fun <T> createBackgroundWork(action: Action<T>) = newWorker(ActionWork(action))
 /**
  * Create a new background work with at least two actions
  */
-fun <T> createBackgroundWorks(action: Action<T>, vararg actions: Action<T>) = newWorker(MultiActionsWork(arrayOf(action, *actions)))
+fun <T> createBackgroundWorks(action1: Action<T>, action2: Action<T>, vararg actions: Action<T>) = newWorker(MultiActionsWork(listOf(action1, action2, *actions)))
+fun <T> createBackgroundWorks(actions: List<Action<T>> ) = newWorker(MultiActionsWork(actions))
 
 /**
  * Create a new background work with an action, and an argument that will pass into the action
@@ -73,7 +74,7 @@ private class ActionWork<out T>(private val action: Action<T>) : Executor<T> {
     suspend override fun execute(scope: CoroutineScope): T = action()
 }
 
-private class MultiActionsWork<out T>(private val actions: Array<Action<T>>) : Executor<List<T>> {
+private class MultiActionsWork<out T>(private val actions: List<Action<T>>) : Executor<List<T>> {
     suspend override fun execute(scope: CoroutineScope): List<T> {
         return actions.map { async(scope.context) { it() } }.map { it.await() }
     }

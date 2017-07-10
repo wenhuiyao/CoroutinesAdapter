@@ -13,7 +13,7 @@ import kotlin.coroutines.experimental.CoroutineContext
 // the CPU with background work
 internal val THREAD_SIZE = Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 6))
 
-internal val CONTEXT_BG = newFixedThreadPoolContext(THREAD_SIZE, "Background")
+internal val CONTEXT_BG = newFixedThreadPoolContext(THREAD_SIZE, "CoroutinesAdapter-Background")
 internal val CONTEXT_UI = UI
 
 enum class CoroutineContexts(internal val context: CoroutineContext) {
@@ -22,11 +22,12 @@ enum class CoroutineContexts(internal val context: CoroutineContext) {
 }
 
 private fun newFixedThreadPoolContext(nThreads: Int, name: String): CoroutineContext {
+    // Using ScheduledThreadPool instead of FixThreadPool since default ExecutorCoroutineDispatcherBase requires support delay,
+    // if a non ScheduledThreadPool is provided, Kotlin may just create one when it want to delay an execution
     return Executors.newScheduledThreadPool(nThreads, BackgroundThreadFactory(name)).asCoroutineDispatcher()
 }
 
 private class BackgroundThreadFactory(private val name: String) : ThreadFactory {
-
     private val threadNo = AtomicInteger()
 
     override fun newThread(target: Runnable?): Thread {
@@ -36,10 +37,6 @@ private class BackgroundThreadFactory(private val name: String) : ThreadFactory 
 }
 
 private class PoolThread(target: Runnable?, name: String) : Thread(target, name) {
-    init {
-        isDaemon = true
-    }
-
     override fun run() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
         super.run()
