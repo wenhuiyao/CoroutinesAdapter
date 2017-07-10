@@ -69,8 +69,8 @@ interface QuadMerger<T1, T2, T3, T4> {
 private typealias Action<T> = () -> T
 
 
-private class ActionWork<out T>(private val action: Action<T>) : BaseExecutor<T>() {
-    override fun onExecute(): T = action()
+private class ActionWork<out T>(private val action: Action<T>) : Executor<T> {
+    suspend override fun execute(scope: CoroutineScope): T = action()
 }
 
 private class MultiActionsWork<out T>(private val actions: Array<Action<T>>) : Executor<List<T>> {
@@ -79,11 +79,9 @@ private class MultiActionsWork<out T>(private val actions: Array<Action<T>>) : E
     }
 }
 
-private class TransformActionWork<T, out R>(
-        private val arg: T,
-        private val action: TransformAction<T, R>) : BaseExecutor<R>() {
-
-    override fun onExecute(): R = action(arg)
+private class TransformActionWork<T, out R>(private val arg: T,
+                                            private val action: TransformAction<T, R>) : Executor<R> {
+    suspend override fun execute(scope: CoroutineScope): R = action(arg)
 }
 
 private class MergeWork<T1, T2>(private val action1: Action<T1>,

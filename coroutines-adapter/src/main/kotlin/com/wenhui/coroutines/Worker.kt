@@ -13,35 +13,6 @@ internal typealias TransformAction<T, R> = (T) -> R
 internal typealias ConsumeAction<T> = (T) -> Unit
 internal typealias FilterAction<T> = (T) -> Boolean
 
-interface WorkCompletion<T, W> {
-
-    /**
-     * Callback when work succeeded. This is going to be called on UI thread
-     */
-    fun onSuccess(action: ConsumeAction<T>): Worker<T, W>
-
-    /**
-     * Callback when work failed. This is going to be called on UI thread
-     */
-    fun onError(action: ConsumeAction<Throwable>): Worker<T, W>
-}
-
-/**
- * W: The return type after [start], should normally allow use to cancel
- */
-interface WorkStarter<T, W> {
-
-
-    fun setStartDelay(delay: Long): Worker<T, W>
-
-    /**
-     * This must be called to start the work
-     */
-    fun start(): W
-}
-
-interface Worker<T, W> : WorkCompletion<T, W>, WorkStarter<T, W>
-
 interface Operator<T, W> : Worker<T, W> {
     /**
      * Transform a source from type T to type R in background thread
@@ -74,6 +45,35 @@ interface Operator<T, W> : Worker<T, W> {
      * @param context: The context where the filter action will be executed
      */
     fun filter(context: CoroutineContexts, action: FilterAction<T>): Operator<T, W>
+}
+
+interface Worker<T, W> : CompleteNotifier<T, W>, WorkStarter<T, W>
+
+interface CompleteNotifier<T, W> {
+
+    /**
+     * Callback when work succeeded. This is going to be called on UI thread
+     */
+    fun onSuccess(action: ConsumeAction<T>): Worker<T, W>
+
+    /**
+     * Callback when work failed. This is going to be called on UI thread
+     */
+    fun onError(action: ConsumeAction<Throwable>): Worker<T, W>
+}
+
+/**
+ * W: The return type after [start], should normally allow use to cancel
+ */
+interface WorkStarter<T, W> {
+
+
+    fun setStartDelay(delay: Long): Worker<T, W>
+
+    /**
+     * This must be called to start the work
+     */
+    fun start(): W
 }
 
 /**

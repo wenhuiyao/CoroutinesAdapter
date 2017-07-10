@@ -58,6 +58,10 @@ fun <T, R> consumeByPool(action: TransformAction<T, R>): ConsumeOp<T, R> {
 }
 
 private fun <T> newChannel() = Channel<T>(Channel.UNLIMITED)
+
+/**
+ * The parent job that used to monitor producer/consumer job
+ */
 private fun parentJob(): Job = Job()
 
 interface Producer<T> : Manageable<Producer<T>> {

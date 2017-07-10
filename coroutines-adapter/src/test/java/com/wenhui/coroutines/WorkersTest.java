@@ -259,4 +259,36 @@ public class WorkersTest {
 
         assertThat(got.get(), equalTo("Merge 100"));
     }
+
+    @Test
+    public void testCreateBackgroundWork() throws Exception {
+        final CountDownLatch doneSignal = new CountDownLatch(1);
+        final AtomicReference<String> got = new AtomicReference<>();
+        Workers.createBackgroundWork(new BaseExecutor<Integer>() {
+            @Override
+            public Integer onExecute() throws Exception {
+                TestUtils.sleep(200);
+                return 1000;
+            }
+        }).transform(CoroutineContexts.BACKGROUND, new Function1<Integer, String>() {
+            @Override
+            public String invoke(Integer integer) {
+                return "transform " + integer;
+            }
+        }).onSuccess(new Function1<String, Unit>() {
+            @Override
+            public Unit invoke(String s) {
+                got.set(s);
+                doneSignal.countDown();
+                return Unit.INSTANCE;
+            }
+        }).start();
+
+        assertThat(got.get(), nullValue());
+
+        doneSignal.await(1, TimeUnit.SECONDS);
+        Robolectric.flushForegroundThreadScheduler();
+
+        assertThat(got.get(), equalTo("transform 1000"));
+    }
 }
