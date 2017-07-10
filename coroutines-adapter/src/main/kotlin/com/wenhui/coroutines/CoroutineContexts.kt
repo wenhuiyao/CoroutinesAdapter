@@ -8,11 +8,12 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.experimental.CoroutineContext
 
-/**
- * We cap to max 6 threads, this can be changed accordingly
- */
-internal val THREAD_SIZE = Math.min(6, 2 * Runtime.getRuntime().availableProcessors())
-internal val CONTEXT_BG = newFixedThreadPoolContext(THREAD_SIZE, "background")
+// We want at least 2 threads and at most 6 threads in the core pool,
+// preferring to have 1 less than the CPU count to avoid saturating
+// the CPU with background work
+internal val THREAD_SIZE = Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 6))
+
+internal val CONTEXT_BG = newFixedThreadPoolContext(THREAD_SIZE, "Background")
 internal val CONTEXT_UI = UI
 
 enum class CoroutineContexts(internal val context: CoroutineContext) {

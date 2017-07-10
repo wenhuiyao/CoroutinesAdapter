@@ -12,6 +12,9 @@ import kotlinx.coroutines.experimental.launch
 
 
 private typealias ConsumeOp<T, R> = Operator<R, Producer<T>>
+
+// We want at least 2 threads, but don't want to take up all the threads,
+// leave one thread for other work
 private val CONSUMER_POOL_SIZE = Math.max(THREAD_SIZE - 1, 2)
 
 /**

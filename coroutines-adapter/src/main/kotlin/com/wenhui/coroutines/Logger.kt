@@ -9,6 +9,8 @@ import android.util.Log
 
 internal val DEBUG_TAG = "CoroutinesAdapter"
 
+internal fun log(message: String) = Log.d(DEBUG_TAG, message)
+
 internal fun logThreadPriority(context: CoroutineContexts) {
     val myId = Process.getThreadPriority(Process.myTid())
     val priority = when(myId) {
