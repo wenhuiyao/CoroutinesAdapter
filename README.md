@@ -1,7 +1,7 @@
 # CoroutinesAdapter
 
 Kotlin coroutines make asynchronous programming simple and easy, however, it has Kotlin specific keyword that can't be interoped with Java.
-This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) to Java usage.
+This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) to Android usage.
 
 [Introduction to Kotlin coroutines](https://kotlinlang.org/docs/reference/coroutines.html)
 
@@ -89,7 +89,7 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 ```Groovy
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.6.3'
+    compile 'com.wenhui:coroutines-adapter:0.6.4'
 }
 
 ```
