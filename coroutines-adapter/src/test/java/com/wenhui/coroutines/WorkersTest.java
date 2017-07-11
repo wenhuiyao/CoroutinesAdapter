@@ -17,10 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNull.nullValue;
+import static org.assertj.core.api.Java6Assertions.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class)
@@ -52,12 +49,12 @@ public class WorkersTest {
             }
         }).start();
 
-        assertThat(got.get(), equalTo(0));
+        assertThat(got.get()).isEqualTo(0);
 
         doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
 
-        assertThat(got.get(), equalTo(1100));
+        assertThat(got.get()).isEqualTo(1100);
     }
 
     @Test
@@ -88,15 +85,15 @@ public class WorkersTest {
             }
         }).start().manageBy(workManager);
 
-        assertThat(got.get(), equalTo(0));
-        assertThat(workManager.hasActiveWork(), is(true));
+        assertThat(got.get()).isEqualTo(0);
+        assertThat(workManager.hasActiveWork()).isEqualTo(true);
         workManager.cancelAllWorks();
 
         doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
 
-        assertThat(workManager.hasActiveWork(), is(false));
-        assertThat(got.get(), equalTo(0));
+        assertThat(workManager.hasActiveWork()).isEqualTo(false);
+        assertThat(got.get()).isEqualTo(0);
     }
 
     @Test
@@ -125,16 +122,16 @@ public class WorkersTest {
             }).start().manageBy(workManager);
         }
 
-        assertThat(counter.get(), is(0));
-        assertThat(workManager.hasActiveWork(), is(true));
+        assertThat(counter.get()).isEqualTo(0);
+        assertThat(workManager.hasActiveWork()).isEqualTo(true);
 
         // deliberately wait for several seconds for all the job to be finished
         doneSignal.await(4, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
         Robolectric.flushBackgroundThreadScheduler();
 
-        assertThat(counter.get(), is(count));
-        assertThat(workManager.hasActiveWork(), is(false));
+        assertThat(counter.get()).isEqualTo(count);
+        assertThat(workManager.hasActiveWork()).isEqualTo(false);
     }
 
     @Test
@@ -162,12 +159,12 @@ public class WorkersTest {
             }
         }).start();
 
-        assertThat(got.get(), equalTo(0));
+        assertThat(got.get()).isEqualTo(0);
 
         doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
 
-        assertThat(got.get(), equalTo(1100));
+        assertThat(got.get()).isEqualTo(1100);
     }
 
     @Test
@@ -207,11 +204,11 @@ public class WorkersTest {
             }
         }).start();
 
-        assertThat(got.get(), equalTo(0));
+        assertThat(got.get()).isEqualTo(0);
 
         doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
-        assertThat(got.get(), equalTo(3000));
+        assertThat(got.get()).isEqualTo(3000);
     }
 
 
@@ -252,12 +249,12 @@ public class WorkersTest {
             }
         }).start();
 
-        assertThat(got.get(), nullValue());
+        assertThat(got.get()).isNull();
 
         doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
 
-        assertThat(got.get(), equalTo("Merge 100"));
+        assertThat(got.get()).isEqualTo("Merge 100");
     }
 
     @Test
@@ -284,11 +281,11 @@ public class WorkersTest {
             }
         }).start();
 
-        assertThat(got.get(), nullValue());
+        assertThat(got.get()).isNull();
 
         doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
 
-        assertThat(got.get(), equalTo("transform 1000"));
+        assertThat(got.get()).isEqualTo("transform 1000");
     }
 }

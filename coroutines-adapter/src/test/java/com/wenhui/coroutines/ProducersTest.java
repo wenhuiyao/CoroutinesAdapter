@@ -16,11 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNull.nullValue;
+import static org.assertj.core.api.Java6Assertions.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class)
@@ -45,14 +41,14 @@ public class ProducersTest {
         }).onSuccess(new Function1<String, Unit>() {
             @Override
             public Unit invoke(String s) {
-                assertThat(got.get(), nullValue());
+                assertThat(got.get()).isNull();
                 got.set(s);
                 doneSignal.countDown();
                 return Unit.INSTANCE;
             }
         }).start();
 
-        assertThat(got.get(), nullValue());
+        assertThat(got.get()).isNull();
 
         for (int i = 0; i < 10; i++) {
             producer.produce(i);
@@ -60,7 +56,7 @@ public class ProducersTest {
 
         doneSignal.await(1, TimeUnit.SECONDS);
         Robolectric.flushForegroundThreadScheduler();
-        assertThat(got.get(), equalTo("Consume 9"));
+        assertThat(got.get()).isEqualTo("Consume 9");
     }
 
     @Ignore
@@ -92,7 +88,7 @@ public class ProducersTest {
             }
         }).start();
 
-        assertThat(got.get().isEmpty(), is(true));
+        assertThat(got.get().isEmpty()).isEqualTo(true);
         for (int i = 0; i < 10; i++) {
             producer.produce(i);
         }
@@ -101,12 +97,12 @@ public class ProducersTest {
         Robolectric.flushForegroundThreadScheduler();
         Robolectric.flushBackgroundThreadScheduler();
 
-        assertThat(counter.get(), equalTo(count));
+        assertThat(counter.get()).isEqualTo(count);
         final ArrayList<String> gots = got.get();
-        assertThat(gots.size(), equalTo(count));
+        assertThat(gots.size()).isEqualTo(count);
 
         for (int i = 0; i < count; i++) {
-            assertThat(gots, hasItem("Consume " + i));
+            assertThat(gots).contains("Consume " + i);
         }
     }
 }

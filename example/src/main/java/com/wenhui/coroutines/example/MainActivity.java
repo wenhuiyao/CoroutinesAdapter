@@ -102,34 +102,38 @@ public class MainActivity extends FragmentActivity {
         Workers.mergeBackgroundWorks(() -> {
             // simulate intensive work
             final int sleep = 2000;
-            Log.d(TAG, "start work 1 on thread: " + ThreadUtils.getCurrentThreadName());
+            logThreadMessage("[Merge] Start merge work 1");
             ThreadUtils.sleep(sleep);
-            Log.d(TAG, "end work 1");
+            logThreadMessage("[Merge] End merge work 1");
             return sleep;
         }, () -> {
             // simulate another intensive work
             final int sleep = 1000;
-            Log.d(TAG, "start work 2 on thread: " + ThreadUtils.getCurrentThreadName());
+            logThreadMessage("[Merge] Start merge work 2");
             ThreadUtils.sleep(sleep);
-            Log.d(TAG, "end work 2");
+            logThreadMessage("[Merge] End merge work 2");
             return sleep;
         }).merge((int1, int2) -> {
+            logThreadMessage("[Merge] Merge 2 works");
             // This block will be executed when both works are completed
             return int1 + int2;
         }).transform(CoroutineContexts.BACKGROUND, data -> {
             // Optionally, transform the data to different data
             // and this is running in background
+            logThreadMessage("[Merge] Transform work");
             ThreadUtils.sleep(2000);
             return "Total sleep " + data + " ms";
         }).consume(CoroutineContexts.UI, data -> {
+            logThreadMessage("[Merge] Consume work");
             Toast.makeText(this, data, Toast.LENGTH_SHORT).show();
             return Unit.INSTANCE;
         }).onSuccess((value) -> {
             // This is running on UI thread
+            logThreadMessage("[Merge] on work success: " + value);
             mTextView.setText(value);
             return Unit.INSTANCE;
         }).onError(e -> {
-            Log.d(TAG, "onError");
+            logThreadMessage("[Merge] on work error");
             Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
             return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
@@ -152,35 +156,37 @@ public class MainActivity extends FragmentActivity {
      */
     private Producer<Integer> producer() {
         // You can use Producers.consumeBy() to consume only the last element sent
-        return Producers.consumeBy((Integer element) -> {
+        return Producers.consumeByPool((Integer element) -> {
             // do intensive work in the background
-            Log.d(TAG, "Start consumer work (" + element + ") on thread: " + ThreadUtils.getCurrentThreadName());
+            logThreadMessage("[Producer] Start consumer work (" + element + ")");
             ThreadUtils.sleep(2000);
-            Log.d(TAG, "end consumer work (" + element + ")");
+            logThreadMessage("[Producer] End consumer work (" + element + ")");
             return element % 10; // result
         }).filter(CoroutineContexts.UI, element -> {
             boolean pass = element % 2 == 0; // only interesting in any even numbers
             if (!pass) {
                 // This is running on UI thread, so we can show toast message
                 Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
-                Log.d(TAG, "filter element: " + element);
+                logThreadMessage("[Producer] Filter element " + element);
             }
             return pass;
         }).consume(result -> {
+            logThreadMessage("[Producer] Consume element " + result);
             // optionally, consume the data, e.g. save it to database
             ThreadUtils.sleep(300);
             return Unit.INSTANCE; // must return this
         }).transform(CoroutineContexts.UI, element -> {
             // optionally, data can be transformed on UI thread
+            logThreadMessage("[Producer] Transform element (" + element + ")");
             return "Consume " + element;
         }).onSuccess(element -> {
             // callback on UI thread
-            Log.d(TAG, element);
+            logThreadMessage("[Producer] On success: " + element);
             mTextView.setText(element);
             return Unit.INSTANCE;
         }).onError(exception -> {
             // error callback on UI thread
-            Log.d(TAG, "onError: " + exception.getMessage());
+            logThreadMessage("[Producer: On error: " + exception.getMessage());
             return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
     }
@@ -221,5 +227,9 @@ public class MainActivity extends FragmentActivity {
     protected void onDestroy() {
         super.onDestroy();
         mWorkManager.cancelAllWorks();
+    }
+
+    private static void logThreadMessage(String message){
+        Log.d(TAG, "[" + ThreadUtils.getCurrentThreadName()+"]: " + message);
     }
 }

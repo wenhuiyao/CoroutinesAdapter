@@ -1,9 +1,7 @@
 package com.wenhui.coroutines
 
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.core.Is.`is`
-import org.hamcrest.core.IsEqual.equalTo
-import org.hamcrest.core.IsNull.nullValue
+import org.assertj.core.api.Java6Assertions.assertThat
+
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -12,8 +10,8 @@ import org.robolectric.annotation.Config
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-
 
 /**
  * Test operators, and callbacks
@@ -24,7 +22,7 @@ class WorkerTest {
 
     @Test
     fun testOnSuccess() {
-        val got = AtomicReference<Int>()
+        val got = AtomicInteger()
         val callSuccess = AtomicBoolean(false)
         val callError = AtomicBoolean(false)
         val doneSignal = CountDownLatch(1)
@@ -41,20 +39,20 @@ class WorkerTest {
         }.start()
 
         // make sure current thread is not blocking
-        assertThat(got.get(), nullValue())
-        assertThat(callSuccess.get(), `is`(false))
-        assertThat(callError.get(), `is`(false))
+        assertThat(got.get()).isEqualTo(0)
+        assertThat(callSuccess.get()).isEqualTo(false)
+        assertThat(callError.get()).isEqualTo(false)
 
         doneSignal.await(1000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
-        assertThat(got.get(), equalTo(2000))
-        assertThat(callSuccess.get(), `is`(true))
-        assertThat(callError.get(), `is`(false))
+        assertThat(got.get()).isEqualTo(2000)
+        assertThat(callSuccess.get()).isEqualTo(true)
+        assertThat(callError.get()).isEqualTo(false)
     }
 
     @Test
     fun testOnError() {
-        val got = AtomicReference<Int>()
+        val got = AtomicInteger()
         val callSuccess = AtomicBoolean(false)
         val callError = AtomicBoolean(false)
         val doneSignal = CountDownLatch(1)
@@ -72,15 +70,15 @@ class WorkerTest {
         }.start()
 
         // make sure current thread is not blocking
-        assertThat(got.get(), nullValue())
-        assertThat(callSuccess.get(), `is`(false))
-        assertThat(callError.get(), `is`(false))
+        assertThat(got.get()).isEqualTo(0)
+        assertThat(callSuccess.get()).isEqualTo(false)
+        assertThat(callError.get()).isEqualTo(false)
 
         doneSignal.await(1000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
-        assertThat(got.get(), nullValue())
-        assertThat(callSuccess.get(), `is`(false))
-        assertThat(callError.get(), `is`(true))
+        assertThat(got.get()).isEqualTo(0)
+        assertThat(callSuccess.get()).isEqualTo(false)
+        assertThat(callError.get()).isEqualTo(true)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -104,7 +102,7 @@ class WorkerTest {
 
     @Test
     fun testFilter_false() {
-        val got = AtomicReference<Int>()
+        val got = AtomicInteger(0)
         val called = AtomicBoolean(false)
         val doneSignal = CountDownLatch(2)
         createBackgroundWork {
@@ -120,18 +118,18 @@ class WorkerTest {
         }.start()
 
         // make sure current thread is not blocking
-        assertThat(got.get(), nullValue())
-        assertThat(called.get(), `is`(false))
+        assertThat(got.get()).isEqualTo(0)
+        assertThat(called.get()).isEqualTo(false)
 
         doneSignal.await(1000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
-        assertThat(got.get(), nullValue())
-        assertThat(called.get(), `is`(false))
+        assertThat(got.get()).isEqualTo(0)
+        assertThat(called.get()).isEqualTo(false)
     }
 
     @Test
     fun testFilter_true() {
-        val got = AtomicReference<Int>()
+        val got = AtomicInteger(0)
         val called = AtomicBoolean(false)
         val doneSignal = CountDownLatch(2)
         createBackgroundWork {
@@ -147,18 +145,18 @@ class WorkerTest {
         }.start()
 
         // make sure current thread is not blocking
-        assertThat(got.get(), nullValue())
-        assertThat(called.get(), `is`(false))
+        assertThat(got.get()).isEqualTo(0)
+        assertThat(called.get()).isEqualTo(false)
 
         doneSignal.await(1000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
-        assertThat(got.get(), equalTo(2000))
-        assertThat(called.get(), `is`(true))
+        assertThat(got.get()).isEqualTo(2000)
+        assertThat(called.get()).isEqualTo(true)
     }
 
     @Test
     fun testConsume() {
-        val got = AtomicReference<Int>()
+        val got = AtomicInteger()
         val called = AtomicBoolean(false)
         val doneSignal = CountDownLatch(2)
         createBackgroundWork {
@@ -173,12 +171,12 @@ class WorkerTest {
         }.start()
 
         // make sure current thread is not blocking
-        assertThat(got.get(), nullValue())
-        assertThat(called.get(), `is`(false))
+        assertThat(got.get()).isEqualTo(0)
+        assertThat(called.get()).isEqualTo(false)
         doneSignal.await(1000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
-        assertThat(got.get(), equalTo(2000))
-        assertThat(called.get(), `is`<Boolean>(true))
+        assertThat(got.get()).isEqualTo(2000)
+        assertThat(called.get()).isEqualTo(true)
     }
 
     @Test
@@ -199,12 +197,12 @@ class WorkerTest {
         }.start()
 
         // make sure current thread is not blocking
-        assertThat(got.get(), nullValue())
-        assertThat(called.get(), `is`(false))
+        assertThat(got.get()).isNull()
+        assertThat(called.get()).isEqualTo(false)
         doneSignal.await(1000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
-        assertThat(got.get(), equalTo<String>("got 2000"))
-        assertThat(called.get(), `is`<Boolean>(true))
+        assertThat(got.get()).isEqualTo("got 2000")
+        assertThat(called.get()).isEqualTo(true)
     }
 
 }

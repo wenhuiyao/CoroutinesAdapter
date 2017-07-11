@@ -12,9 +12,8 @@ import kotlinx.coroutines.experimental.launch
 
 private typealias ConsumeOp<T, R> = Operator<R, Producer<T>>
 
-// We want at least 2 threads, but don't want to take up all the threads,
-// leave one thread for other work
-private val CONSUMER_POOL_SIZE = Math.max(THREAD_SIZE - 1, 2)
+// Use all the available threads, this doesn't mean other work will be blocked, they will be executed in parallel
+private val CONSUMER_POOL_SIZE = THREAD_SIZE
 
 /**
  * Utility method to create a [Producer], and the producer can be reused to execute items by calling [Producer.produce],

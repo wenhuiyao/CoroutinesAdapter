@@ -1,8 +1,8 @@
 package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.Job
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.core.Is.`is`
+import org.assertj.core.api.Java6Assertions.assertThat
+
 import org.junit.Before
 import org.junit.Test
 
@@ -18,21 +18,21 @@ class WorkManagerTest {
 
     @Test
     fun testHaveActiveWorks_empty() {
-        assertThat(workManager.hasActiveWork(), `is`(false))
+        assertThat(workManager.hasActiveWork()).isEqualTo(false)
     }
 
     @Test
     fun testHaveActiveWorks_1() {
         addJobToManager()
 
-        assertThat(workManager.hasActiveWork(), `is`(true))
+        assertThat(workManager.hasActiveWork()).isEqualTo(true)
     }
 
     @Test
     fun testHaveActiveWorks_many() {
         addJobToManager()
         addJobToManager()
-        assertThat(workManager.hasActiveWork(), `is`(true))
+        assertThat(workManager.hasActiveWork()).isEqualTo(true)
     }
 
     @Test
@@ -41,10 +41,10 @@ class WorkManagerTest {
         addJobToManager()
         addJobToManager()
 
-        assertThat(workManager.hasActiveWork(), `is`(true))
+        assertThat(workManager.hasActiveWork()).isEqualTo(true)
         workManager.cancelAllWorks()
 
-        assertThat(workManager.hasActiveWork(), `is`(false))
+        assertThat(workManager.hasActiveWork()).isEqualTo(false)
     }
 
     private fun addJobToManager() {
@@ -53,12 +53,12 @@ class WorkManagerTest {
     }
 
     fun test() {
-        mergeBackgroundWorks( {
+        mergeBackgroundWorks({
             "Merge "
         }, {
             1000
         }).merge { s, i ->
             s.hashCode() + i
-        }.consume {  }
+        }.consume { }
     }
 }

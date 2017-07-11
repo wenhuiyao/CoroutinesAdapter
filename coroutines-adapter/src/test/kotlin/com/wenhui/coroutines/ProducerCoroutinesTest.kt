@@ -1,9 +1,6 @@
 package com.wenhui.coroutines
 
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.core.Is.`is`
-import org.hamcrest.core.IsEqual.equalTo
-import org.hamcrest.core.IsNull.nullValue
+import org.assertj.core.api.Java6Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -29,14 +26,14 @@ class ProducerCoroutinesTest {
             it.toString()
         }.start()
 
-        assertThat(receivedItem.get(), nullValue())
+        assertThat(receivedItem.get()).isNull()
         val success = producer.produce(itemToTest)
-        assertThat(success, `is`(true))
+        assertThat(success).isEqualTo(true)
 
         doneSignal.await(1, TimeUnit.SECONDS)
         Robolectric.flushForegroundThreadScheduler()
 
-        assertThat(receivedItem.get(), equalTo("item=$itemToTest"))
+        assertThat(receivedItem.get()).isEqualTo("item=$itemToTest")
     }
 
     @Test
@@ -45,9 +42,9 @@ class ProducerCoroutinesTest {
             it.toString()
         }.start()
 
-        assertThat(producer.isActive, `is`(true))
+        assertThat(producer.isActive).isEqualTo(true)
         producer.close()
-        assertThat(producer.isActive, `is`(false))
+        assertThat(producer.isActive).isEqualTo(false)
     }
 
     @Test
@@ -59,9 +56,9 @@ class ProducerCoroutinesTest {
 
         producer.manageBy(workManager)
 
-        assertThat(producer.isActive, `is`(true))
+        assertThat(producer.isActive).isEqualTo(true)
         workManager.cancelAllWorks()
-        assertThat(producer.isActive, `is`(false))
+        assertThat(producer.isActive).isEqualTo(false)
     }
 
     @Test
@@ -76,15 +73,15 @@ class ProducerCoroutinesTest {
             it.toString()
         }.start()
 
-        assertThat(receivedItem.get(), nullValue())
+        assertThat(receivedItem.get()).isNull()
         producer.close()
         val success = producer.produce(itemToTest)
-        assertThat(success, `is`(false))
+        assertThat(success).isEqualTo(false)
 
         doneSignal.await(1, TimeUnit.SECONDS)
         Robolectric.flushForegroundThreadScheduler()
 
-        assertThat(receivedItem.get(), nullValue())
+        assertThat(receivedItem.get()).isNull()
     }
 
     @Test
@@ -100,14 +97,14 @@ class ProducerCoroutinesTest {
             it.toString()
         }.start().manageBy(workManager)
 
-        assertThat(receivedItem.get(), nullValue())
+        assertThat(receivedItem.get()).isNull()
         workManager.cancelAllWorks()
         val success = producer.produce(itemToTest)
-        assertThat(success, `is`(false))
+        assertThat(success).isEqualTo(false)
 
         doneSignal.await(1, TimeUnit.SECONDS)
         Robolectric.flushForegroundThreadScheduler()
 
-        assertThat(receivedItem.get(), nullValue())
+        assertThat(receivedItem.get()).isNull()
     }
 }

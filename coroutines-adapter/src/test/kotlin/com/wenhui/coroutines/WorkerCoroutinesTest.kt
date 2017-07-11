@@ -1,9 +1,7 @@
 package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.CoroutineScope
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.core.Is.`is`
-import org.hamcrest.core.IsEqual.equalTo
+import org.assertj.core.api.Java6Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -12,7 +10,6 @@ import org.robolectric.annotation.Config
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
-
 
 @RunWith(RobolectricTestRunner::class)
 @Config(constants = BuildConfig::class)
@@ -27,14 +24,14 @@ class WorkerCoroutinesTest {
             doneSignal.countDown()
         }.start()
 
-        assertThat(got.get(), equalTo(0))
+        assertThat(got.get()).isEqualTo(0)
         work.cancel()
 
         doneSignal.await(1000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
 
         // Work is cancelled
-        assertThat(got.get(), equalTo(0))
+        assertThat(got.get()).isEqualTo(0)
     }
 
     @Test
@@ -46,13 +43,13 @@ class WorkerCoroutinesTest {
             doneSignal.countDown()
         }.start()
 
-        assertThat(work.isActive, `is`(true))
-        assertThat(work.isCompleted, `is`(false))
+        assertThat(work.isActive).isEqualTo(true)
+        assertThat(work.isCompleted).isEqualTo(false)
         doneSignal.await(2000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
 
-        assertThat(work.isActive, `is`(false))
-        assertThat(work.isCompleted, `is`(true))
+        assertThat(work.isActive).isEqualTo(false)
+        assertThat(work.isCompleted).isEqualTo(true)
     }
 
     @Test
@@ -64,16 +61,16 @@ class WorkerCoroutinesTest {
             doneSignal.countDown()
         }.start()
 
-        assertThat(work.isActive, `is`(true))
-        assertThat(work.isCompleted, `is`(false))
+        assertThat(work.isActive).isEqualTo(true)
+        assertThat(work.isCompleted).isEqualTo(false)
         work.cancel()
 
         doneSignal.await(1000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
 
-        assertThat(got.get(), equalTo(0))
-        assertThat(work.isActive, `is`(false))
-        assertThat(work.isCompleted, `is`(true))
+        assertThat(got.get()).isEqualTo(0)
+        assertThat(work.isActive).isEqualTo(false)
+        assertThat(work.isCompleted).isEqualTo(true)
     }
 
 
