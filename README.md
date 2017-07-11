@@ -1,7 +1,7 @@
 # CoroutinesAdapter
 
 Kotlin coroutines make asynchronous programming simple and easy, however, it has Kotlin specific keyword that can't be interoped with Java.
-This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) to Android usage.
+This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) for use in Android.
 
 [Introduction to Kotlin coroutines](https://kotlinlang.org/docs/reference/coroutines.html)
 
@@ -52,7 +52,7 @@ Work work = Workers.mergeBackgroundWorks(() -> {
 
 ```
 
-##### Producer
+##### Producer/Consumer
 
 ```Java
 Producer producer = Producers.consumeBy((Integer element) -> {
@@ -81,7 +81,7 @@ Producer producer = Producers.consumeBy((Integer element) -> {
     // When producer is no longer needed
     producer.close();
 
-    // Create a pool of consumers to consume the produce elements
+    // Create a pool of consumers to consume the produced elements
     Producers.consumeByPool()
 ```
 
@@ -97,5 +97,5 @@ dependencies {
 
 ##### NOTE:
 1. Kotlin coroutines is still an experimental feature
-2. All example is written in Java 8, but can be use back to Java 6
+2. All examples are written in Java 8, but can be use in to Java 6, 7
 3. The library doesn't cover all the use cases of coroutines
