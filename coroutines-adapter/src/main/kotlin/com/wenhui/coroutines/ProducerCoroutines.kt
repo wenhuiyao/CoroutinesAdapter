@@ -7,7 +7,6 @@ import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.SendChannel
-import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlinx.coroutines.experimental.launch
 
 
@@ -58,6 +57,10 @@ fun <T, R> consumeByPool(action: TransformAction<T, R>): ConsumeOp<T, R> {
 }
 
 private fun <T> newChannel() = Channel<T>(Channel.UNLIMITED)
+
+/**
+ * The parent job that used to monitor producer/consumer job
+ */
 private fun parentJob(): Job = Job()
 
 interface Producer<T> : Manageable<Producer<T>> {
@@ -65,7 +68,7 @@ interface Producer<T> : Manageable<Producer<T>> {
     /**
      * Return `true` is producer is active. The produced item can be consumed only when the state is active
      */
-    fun isActive(): Boolean
+    val isActive: Boolean
 
     /**
      * Produce an item that will be consumed by the consumer(s), return `true` if element is added successfully,
@@ -82,15 +85,16 @@ interface Producer<T> : Manageable<Producer<T>> {
 private interface Consumer<T> {
 
     /**
-     * Consume elements, and execute it with [block] of coroutine code
+     * Consume each element, and when the buffer is empty, the queue will be blocked until next item is received, and
+     * execute it with [block] of coroutine code
      */
-    fun consume(block: suspend CoroutineScope.(T) -> Unit): Job
+    fun consumeEach(block: suspend CoroutineScope.(ReceiveChannel<T>, T) -> Unit): Job
 }
 
 private class ProducerImpl<T>(private val channel: SendChannel<T>,
                               private val parentJob: Job) : Producer<T> {
 
-    override fun isActive(): Boolean = parentJob.isActive && !channel.isClosedForSend
+    override val isActive: Boolean get() = parentJob.isActive && !channel.isClosedForSend
 
     override fun produce(element: T): Boolean {
         if (!parentJob.isActive) {
@@ -128,11 +132,11 @@ private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
         element?.let { return action(it) } ?: discontinueExecution()
     }
 
-    override fun consume(block: suspend CoroutineScope.(T) -> Unit): Job {
+    override fun consumeEach(block: suspend CoroutineScope.(ReceiveChannel<T>, T) -> Unit): Job {
         return launch(CONTEXT_BG + parentJob) {
-            channel.consumeEach {
-                element = it
-                block(it)
+            for (e in channel) {
+                element = e
+                block(channel, e)
             }
         }
     }
@@ -170,15 +174,20 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
 
     private fun consumeOnlyLast(): Job {
         var internalJob: Job? = null
-        return consumer.consume {
-            // consume the element, but we first need to make sure the current job is cancelled to avoid race condition
-            internalJob?.cancel()
-            internalJob = executeWork(context)
+        return consumer.consumeEach { channel, e ->
+            if (channel.isEmpty) {
+                // only consume the last element
+                // but we first need to make sure the current job is cancelled to avoid race condition
+                internalJob?.cancel()
+                // must use the context from the scope, so when the parent job is cancelled, this will be cancelled
+                internalJob = executeWork(context)
+            }
         }
     }
 
     private fun consumeEach(): Job {
-        return consumer.consume {
+        return consumer.consumeEach { _, _ ->
+            // must use the context from the scope, so when the parent job is cancelled, this will be cancelled
             executeWork(context).join()
         }
     }

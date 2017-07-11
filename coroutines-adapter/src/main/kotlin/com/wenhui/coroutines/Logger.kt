@@ -9,11 +9,18 @@ import android.util.Log
 
 internal val DEBUG_TAG = "CoroutinesAdapter"
 
-internal fun log(message: String) = Log.d(DEBUG_TAG, message)
+internal fun log(message: String) {
+    if (BuildConfig.DEBUG) {
+        Log.d(DEBUG_TAG, "[${Thread.currentThread().name}] $message")
+    }
+}
 
 internal fun logThreadPriority(context: CoroutineContexts) {
+    if (!BuildConfig.DEBUG) {
+        return
+    }
     val myId = Process.getThreadPriority(Process.myTid())
-    val priority = when(myId) {
+    val priority = when (myId) {
         Process.THREAD_PRIORITY_BACKGROUND -> "BACKGROUND"
         Process.THREAD_PRIORITY_DEFAULT -> "DEFAULT"
         Process.THREAD_PRIORITY_DISPLAY -> "DISPLAY"

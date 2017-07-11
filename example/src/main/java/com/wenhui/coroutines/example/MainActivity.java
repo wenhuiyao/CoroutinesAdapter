@@ -152,7 +152,7 @@ public class MainActivity extends FragmentActivity {
      */
     private Producer<Integer> producer() {
         // You can use Producers.consumeBy() to consume only the last element sent
-        return Producers.consumeByPool((Integer element) -> {
+        return Producers.consumeBy((Integer element) -> {
             // do intensive work in the background
             Log.d(TAG, "Start consumer work (" + element + ") on thread: " + ThreadUtils.getCurrentThreadName());
             ThreadUtils.sleep(2000);
@@ -186,7 +186,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void cancelCurrentWork() {
-        if (mWorkManager.hasActiveWorks()) {
+        if (mWorkManager.hasActiveWork()) {
             mWorkManager.cancelAllWorks();
         }
     }

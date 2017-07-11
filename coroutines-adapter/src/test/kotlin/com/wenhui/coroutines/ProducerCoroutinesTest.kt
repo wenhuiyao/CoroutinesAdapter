@@ -45,9 +45,9 @@ class ProducerCoroutinesTest {
             it.toString()
         }.start()
 
-        assertThat(producer.isActive(), `is`(true))
+        assertThat(producer.isActive, `is`(true))
         producer.close()
-        assertThat(producer.isActive(), `is`(false))
+        assertThat(producer.isActive, `is`(false))
     }
 
     @Test
@@ -59,9 +59,9 @@ class ProducerCoroutinesTest {
 
         producer.manageBy(workManager)
 
-        assertThat(producer.isActive(), `is`(true))
+        assertThat(producer.isActive, `is`(true))
         workManager.cancelAllWorks()
-        assertThat(producer.isActive(), `is`(false))
+        assertThat(producer.isActive, `is`(false))
     }
 
     @Test
