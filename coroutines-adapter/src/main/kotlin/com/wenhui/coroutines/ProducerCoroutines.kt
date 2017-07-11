@@ -10,8 +10,6 @@ import kotlinx.coroutines.experimental.channels.SendChannel
 import kotlinx.coroutines.experimental.launch
 
 
-private typealias ConsumeOp<T, R> = Operator<R, Producer<T>>
-
 // Use all the available threads, this doesn't mean other work will be blocked, they will be executed in parallel
 private val CONSUMER_POOL_SIZE = THREAD_SIZE
 
@@ -25,7 +23,7 @@ private val CONSUMER_POOL_SIZE = THREAD_SIZE
  * NOTE: the producer will only execute one item at a time, and if an item is received before the previous work
  * completed, previous work will be cancelled and the current item will be consumed immediately
  */
-fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
+fun <T, R> consumeBy(action: TransformAction<T, R>): Operator<R, Producer<T>> {
     val channel = newChannel<T>()
     val parentJob = parentJob()
     val producer = ProducerImpl(channel, parentJob)
@@ -43,7 +41,7 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): ConsumeOp<T, R> {
  * NOTE: Since all the operators will be shared among consumers in different thread, make sure the operators are
  * stateless to avoid race condition
  */
-fun <T, R> consumeByPool(action: TransformAction<T, R>): ConsumeOp<T, R> {
+fun <T, R> consumeByPool(action: TransformAction<T, R>): Operator<R, Producer<T>> {
     val channel = newChannel<T>()
     val parentJob = parentJob()
     val producer = ProducerImpl(channel, parentJob)
