@@ -36,7 +36,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-moshi:2.1.0'
 
     implementation project(':coroutines-adapter')
-//    implementation 'com.wenhui:coroutines-adapter:0.6.7-snapshot-2'
+//    implementation 'com.wenhui:coroutines-adapter:0.6.8-snapshot-1'
 
 
     def leakCanaryVersion = '1.5.1'

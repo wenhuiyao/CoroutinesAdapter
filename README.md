@@ -92,7 +92,7 @@ First make sure to add Kotlin plugin to Android project
 ```Groovy
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.6.7'
+    compile 'com.wenhui:coroutines-adapter:0.6.8'
 }
 
 ```
@@ -101,4 +101,3 @@ dependencies {
 ##### NOTE:
 1. Kotlin coroutines is still an experimental feature
 2. All examples are written in Java 8, but can be use in to Java 6, 7
-3. The library doesn't cover all the use cases of coroutines
