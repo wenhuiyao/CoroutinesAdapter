@@ -3,7 +3,6 @@ package com.wenhui.coroutines
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.run
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
@@ -129,11 +128,11 @@ internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Op
         try {
             val response = executor.execute(this)
             if (isActive) { // make sure job is not yet cancelled
-                successAction?.let { run(CONTEXT_UI) { it(response) } }
+                successAction?.let { launch(CONTEXT_UI) { it(response) } }
             }
         } catch(exception: Throwable) {
             if (isActive && shouldReportException(exception)) { // make sure job is not yet cancelled
-                errorAction?.let { run(CONTEXT_UI) { it(exception) } }
+                errorAction?.let { launch(CONTEXT_UI) { it(exception) } }
             }
         }
     }

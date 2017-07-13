@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 ext {
-    libraryVersion = "0.6.5"
+    libraryVersion = "0.6.6-snapshot"
 
     siteUrl = 'https://github.com/wenhuiyao/CoroutinesAdapter' // Homepage URL of the library
     gitUrl = 'https://github.com/wenhuiyao/CoroutinesAdapter.git' // Git repository URL
@@ -26,7 +26,7 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 25
-        versionCode 18
+        versionCode 19
         versionName libraryVersion
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
