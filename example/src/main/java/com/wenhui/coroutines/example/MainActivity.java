@@ -98,42 +98,43 @@ public class MainActivity extends FragmentActivity {
     private void onSimpleMergeWorkButtonClick() {
         cancelCurrentWork();
 
+        final String tag = "Merge";
         mTextView.setText("start merge work");
         Workers.mergeBackgroundWorks(() -> {
             // simulate intensive work
             final int sleep = 2000;
-            logThreadMessage("[Merge] Start merge work 1");
+            logThreadMessage(tag, "Start merge work 1");
             ThreadUtils.sleep(sleep);
-            logThreadMessage("[Merge] End merge work 1");
+            logThreadMessage(tag, "End merge work 1");
             return sleep;
         }, () -> {
             // simulate another intensive work
             final int sleep = 1000;
-            logThreadMessage("[Merge] Start merge work 2");
+            logThreadMessage(tag, "Start merge work 2");
             ThreadUtils.sleep(sleep);
-            logThreadMessage("[Merge] End merge work 2");
+            logThreadMessage(tag, "End merge work 2");
             return sleep;
         }).merge((int1, int2) -> {
-            logThreadMessage("[Merge] Merge 2 works");
+            logThreadMessage(tag, "Merge 2 works");
             // This block will be executed when both works are completed
             return int1 + int2;
         }).transform(CoroutineContexts.BACKGROUND, data -> {
             // Optionally, transform the data to different data
             // and this is running in background
-            logThreadMessage("[Merge] Transform work");
+            logThreadMessage(tag, "Transform work");
             ThreadUtils.sleep(2000);
             return "Total sleep " + data + " ms";
         }).consume(CoroutineContexts.UI, data -> {
-            logThreadMessage("[Merge] Consume work");
+            logThreadMessage(tag, "Consume work");
             Toast.makeText(this, data, Toast.LENGTH_SHORT).show();
             return Unit.INSTANCE;
         }).onSuccess((value) -> {
             // This is running on UI thread
-            logThreadMessage("[Merge] on work success: " + value);
+            logThreadMessage(tag, "on work success: " + value);
             mTextView.setText(value);
             return Unit.INSTANCE;
         }).onError(e -> {
-            logThreadMessage("[Merge] on work error");
+            logThreadMessage(tag, "On work error");
             Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
             return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
@@ -155,38 +156,39 @@ public class MainActivity extends FragmentActivity {
      * Showcase producer work flow
      */
     private Producer<Integer> producer() {
+        final String tag = "Producer";
         // You can use Producers.consumeBy() to consume only the last element sent
         return Producers.consumeByPool((Integer element) -> {
             // do intensive work in the background
-            logThreadMessage("[Producer] Start consumer work (" + element + ")");
+            logThreadMessage(tag, "Start consumer work (" + element + ")");
             ThreadUtils.sleep(2000);
-            logThreadMessage("[Producer] End consumer work (" + element + ")");
+            logThreadMessage(tag, "End consumer work (" + element + ")");
             return element % 10; // result
         }).filter(CoroutineContexts.UI, element -> {
             boolean pass = element % 2 == 0; // only interesting in any even numbers
             if (!pass) {
                 // This is running on UI thread, so we can show toast message
                 Toast.makeText(this, "Filter element: " + element, Toast.LENGTH_SHORT).show();
-                logThreadMessage("[Producer] Filter element " + element);
+                logThreadMessage(tag, "Filter element " + element);
             }
             return pass;
         }).consume(result -> {
-            logThreadMessage("[Producer] Consume element " + result);
+            logThreadMessage(tag, "Consume element " + result);
             // optionally, consume the data, e.g. save it to database
             ThreadUtils.sleep(300);
             return Unit.INSTANCE; // must return this
         }).transform(CoroutineContexts.UI, element -> {
             // optionally, data can be transformed on UI thread
-            logThreadMessage("[Producer] Transform element (" + element + ")");
+            logThreadMessage(tag, "Transform element (" + element + ")");
             return "Consume " + element;
         }).onSuccess(element -> {
             // callback on UI thread
-            logThreadMessage("[Producer] On success: " + element);
+            logThreadMessage(tag, "On success: " + element);
             mTextView.setText(element);
             return Unit.INSTANCE;
         }).onError(exception -> {
             // error callback on UI thread
-            logThreadMessage("[Producer: On error: " + exception.getMessage());
+            logThreadMessage(tag, "On error: " + exception.getMessage());
             return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
     }
@@ -229,7 +231,7 @@ public class MainActivity extends FragmentActivity {
         mWorkManager.cancelAllWorks();
     }
 
-    private static void logThreadMessage(String message){
-        Log.d(TAG, "[" + ThreadUtils.getCurrentThreadName()+"]: " + message);
+    private static void logThreadMessage(String tag, String message){
+        Log.d(TAG, "[" + ThreadUtils.getCurrentThreadName()+"]: " + "[" + tag + "]" + message);
     }
 }
