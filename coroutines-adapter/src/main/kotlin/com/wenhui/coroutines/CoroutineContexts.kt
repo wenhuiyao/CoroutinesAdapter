@@ -3,6 +3,7 @@ package com.wenhui.coroutines
 import android.os.Process
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.asCoroutineDispatcher
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger
@@ -13,18 +14,24 @@ import kotlin.coroutines.experimental.CoroutineContext
 // the CPU with background work
 internal val THREAD_SIZE = Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 6))
 
-internal val CONTEXT_BG = newFixedThreadPoolContext(THREAD_SIZE, "CoroutinesAdapter-Background")
+internal val CONTEXT_BG: CoroutineContext by lazy { getGlobalConfig().executor.asCoroutineDispatcher() }
 internal val CONTEXT_UI = UI
 
-enum class CoroutineContexts(internal val context: CoroutineContext) {
-    BACKGROUND(CONTEXT_BG),
-    UI(CONTEXT_UI)
+enum class CoroutineContexts {
+    BACKGROUND, UI
 }
 
-private fun newFixedThreadPoolContext(nThreads: Int, name: String): CoroutineContext {
+internal fun CoroutineContexts.context(): CoroutineContext {
+    return when (this) {
+        CoroutineContexts.BACKGROUND -> CONTEXT_BG
+        CoroutineContexts.UI -> CONTEXT_UI
+    }
+}
+
+internal fun newDefaultExecutorService(): ExecutorService {
     // Using ScheduledThreadPool instead of FixThreadPool since default ExecutorCoroutineDispatcherBase requires support delay,
     // if a non ScheduledThreadPool is provided, Kotlin may just create one when it want to delay an execution
-    return Executors.newScheduledThreadPool(nThreads, BackgroundThreadFactory(name)).asCoroutineDispatcher()
+    return Executors.newScheduledThreadPool(THREAD_SIZE, BackgroundThreadFactory("CoroutinesAdapter-Background"))
 }
 
 private class BackgroundThreadFactory(private val name: String) : ThreadFactory {
