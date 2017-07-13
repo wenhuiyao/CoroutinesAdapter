@@ -87,12 +87,10 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 
 ##### Usage
 
-First make sure to add Kotlin plugin to Android project
-
 ```Groovy
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.6.8'
+    compile 'com.wenhui:coroutines-adapter:0.7.0'
 }
 
 ```
