@@ -17,10 +17,9 @@ fun config(config: Configuration) {
 }
 
 internal fun getSingletonConfig(): Configuration {
-    if (configuration == null) {
-        configuration = defaultConfiguration()
-    }
-    return configuration!!
+    val config = configuration ?: defaultConfiguration()
+    configuration = config
+    return config
 }
 
 private fun defaultConfiguration() = Configuration.Builder().build()
@@ -39,11 +38,7 @@ class Configuration private constructor(internal val executor: Executor) {
         }
 
         fun build(): Configuration {
-            if (executor == null) {
-                executor = newDefaultExecutorService()
-            }
-
-            return Configuration(executor = executor!!)
+            return Configuration(executor = executor ?: newDefaultExecutorService())
         }
     }
 }
