@@ -11,6 +11,7 @@ import kotlin.coroutines.experimental.CoroutineContext
 internal typealias TransformAction<T, R> = (T) -> R
 internal typealias ConsumeAction<T> = (T) -> Unit
 internal typealias FilterAction<T> = (T) -> Boolean
+internal typealias CompleteAction = () -> Unit
 
 interface Operator<T, W> : Worker<T, W> {
     /**
@@ -52,11 +53,14 @@ interface CompleteNotifier<T, W> {
 
     /**
      * Callback when work succeeded. This is going to be called on UI thread
+     *
+     * @throws IllegalArgumentException if this is called more than once
      */
     fun onSuccess(action: ConsumeAction<T>): Worker<T, W>
 
     /**
      * Callback when work failed. This is going to be called on UI thread
+     * @throws IllegalArgumentException if this is called more than once
      */
     fun onError(action: ConsumeAction<Throwable>): Worker<T, W>
 }
@@ -102,17 +106,13 @@ internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Op
     protected abstract fun <R> newWorker(executor: Executor<R>): Operator<R, W>
 
     override fun onSuccess(action: ConsumeAction<T>): Worker<T, W> {
-        if (successAction != null) {
-            throw IllegalArgumentException("onSuccess() is called twice")
-        }
+        require(successAction == null) { "onSuccess() is called twice" }
         successAction = action
         return this
     }
 
     override fun onError(action: ConsumeAction<Throwable>): Worker<T, W> {
-        if (errorAction != null) {
-            throw IllegalArgumentException("onError() is called twice")
-        }
+        require(errorAction == null) { "onError() is called twice" }
         errorAction = action
         return this
     }
