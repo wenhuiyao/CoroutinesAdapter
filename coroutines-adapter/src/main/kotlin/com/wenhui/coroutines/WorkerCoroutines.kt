@@ -31,7 +31,7 @@ interface Work : Manageable<Work> {
 
 }
 
-class WorkImpl(val job: Job) : Work {
+internal class WorkImpl(val job: Job) : Work {
 
     override val isActive: Boolean get() = job.isActive
 

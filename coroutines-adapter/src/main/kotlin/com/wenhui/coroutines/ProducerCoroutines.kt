@@ -39,7 +39,7 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): Operator<R, Producer<T>> {
  *
  * Make sure to call [Producer.close] if not use [Producer.manageBy] [WorkManager]
  *
- * NOTE: Since all the operators will be shared among consumers in different thread, make sure the operators are
+ * NOTE: Since all the operators will be shared among consumers in different threads, make sure the operators are
  * stateless to avoid race condition
  */
 fun <T, R> consumeByPool(action: TransformAction<T, R>): Operator<R, Producer<T>> {
