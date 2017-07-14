@@ -22,12 +22,16 @@ public class ExampleApplication extends Application {
         }
         LeakCanary.install(this);
 
-        configureCoroutinesAdapter();
+//        configureCoroutinesAdapter();
     }
 
+    /**
+     * Use custom executor for CoroutinesAdapter
+     */
     private void configureCoroutinesAdapter() {
-        Configuration config = new Configuration();
-        config.setExecutor(Executors.newScheduledThreadPool(3, new ThreadFactory()));
+        Configuration config = new Configuration.Builder()
+                .executor(Executors.newScheduledThreadPool(3, new ThreadFactory()))
+                .build();
 
         CoroutinesAdapter.config(config);
     }

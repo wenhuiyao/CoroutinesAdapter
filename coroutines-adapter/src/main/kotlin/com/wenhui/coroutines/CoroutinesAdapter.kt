@@ -16,22 +16,45 @@ fun config(config: Configuration) {
     configuration = config
 }
 
-class Configuration {
-
-    /**
-     * Config the executor use to execute background work
-     */
-    lateinit var executor: Executor
-
-}
-
-internal fun getGlobalConfig(): Configuration {
+internal fun getSingletonConfig(): Configuration {
     if (configuration == null) {
-        configuration = Configuration().apply { executor = newDefaultExecutorService() }
+        configuration = defaultConfiguration()
     }
     return configuration!!
 }
 
+private fun defaultConfiguration() = Configuration.Builder().build()
+
+class Configuration private constructor(internal val executor: Executor) {
+
+    class Builder {
+        /**
+         * Config the executor use to execute background work
+         */
+        private var executor: Executor? = null
+
+        fun executor(executor: Executor): Builder {
+            this.executor = executor
+            return this
+        }
+
+        fun build(): Configuration {
+            if (executor == null) {
+                executor = newDefaultExecutorService()
+            }
+
+            return Configuration(executor = executor!!)
+        }
+    }
+}
+
+
+/**
+ * For testing
+ */
+internal fun resetConfiguration() {
+    configuration = null
+}
 
 
 

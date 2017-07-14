@@ -8,7 +8,7 @@ internal abstract class BaseOperator<T, R>(private val dependedExecutor: Executo
 
     suspend override fun execute(scope: CoroutineScope): R {
         val t = dependedExecutor.execute(scope)
-        return run(context.context()) { onExecute(t) }
+        return run(context.context) { onExecute(t) }
     }
 
     protected abstract fun onExecute(input: T): R

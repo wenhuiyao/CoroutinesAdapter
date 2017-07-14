@@ -177,8 +177,7 @@ public class MainActivity extends FragmentActivity {
             // optionally, consume the data, e.g. save it to database
             ThreadUtils.sleep(300);
             return Unit.INSTANCE; // must return this
-        }).transform(CoroutineContexts.UI, element -> {
-            // optionally, data can be transformed on UI thread
+        }).transform(element -> {
             logThreadMessage(tag, "Transform element (" + element + ")");
             return "Consume " + element;
         }).onSuccess(element -> {
@@ -232,6 +231,6 @@ public class MainActivity extends FragmentActivity {
     }
 
     private static void logThreadMessage(String tag, String message){
-        Log.d(TAG, "[" + ThreadUtils.getCurrentThreadName()+"]: " + "[" + tag + "]" + message);
+        Log.d(TAG, "[" + ThreadUtils.getCurrentThreadName()+"]: " + "[" + tag + "] " + message);
     }
 }
