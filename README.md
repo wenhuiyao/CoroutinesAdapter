@@ -19,10 +19,8 @@ Work work = Workers.createBackgroundWork(() -> {
         return newValue;
     }).onSuccess((value) -> {
         // Callback when work is completed successfully. This is happending on UI thread
-        return Unit.INSTANCE;
     }).onError(throwable -> {
         // Callback when work has error. This is happening on UI thread
-        return Unit.INSTANCE;
     }).setStartDelay(2000).start();
 
 // When activity/fragment is destroyed, the work can be canceled to avoid memory leak
@@ -43,11 +41,9 @@ Work work = Workers.mergeBackgroundWorks(() -> {
     }).onSuccess((value) -> {
         // Callback when work is completed successfully. This is happending on UI thread
         mTextView.setText(value);
-        return Unit.INSTANCE;
     }).onError(e -> {
         // Callback when work is completed successfully. This is happending on UI thread
         Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        return Unit.INSTANCE;
     }).start();
 
 ```
@@ -63,16 +59,13 @@ Producer producer = Producers.consumeBy((Integer element) -> {
         return element % 2 == 0; // only interesting in any even numbers
     }).consume(result -> {
         // consume the data, e.g. saving it to database
-        return Unit.INSTANCE; // must return this
     }).transform(CoroutineContexts.UI, element ->  {
         // optionally, data can be consumed on UI thread
         return "Consume " + element;
     }).onSuccess(element -> {
         // success callback
-        return Unit.INSTANCE;
     }).onError(throwable -> {
         // error callback
-        return Unit.INSTANCE;
     }).start();
 
     // Now, produce item to be consumed by the above code
@@ -90,7 +83,7 @@ Producer producer = Producers.consumeBy((Integer element) -> {
 ```Groovy
 
 dependencies {
-    compile 'com.wenhui:coroutines-adapter:0.7.0'
+    compile 'com.wenhui:coroutines-adapter:0.7.1'
 }
 
 ```
