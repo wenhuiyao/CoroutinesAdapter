@@ -13,7 +13,6 @@ import com.wenhui.coroutines.Producers;
 import com.wenhui.coroutines.WorkManager;
 import com.wenhui.coroutines.Workers;
 import com.wenhui.coroutines.example.books.GoogleBooks;
-import kotlin.Unit;
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.moshi.MoshiConverterFactory;
@@ -83,11 +82,9 @@ public class MainActivity extends FragmentActivity {
         }).onSuccess((value) -> {
             // This is running on UI thread
             mTextView.setText(value);
-            return Unit.INSTANCE;
         }).onError(e -> {
             Log.d(TAG, "onError");
             Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            return Unit.INSTANCE;
         }).setStartDelay(1000).start().manageBy(mWorkManager);
 
     }
@@ -127,16 +124,13 @@ public class MainActivity extends FragmentActivity {
         }).consume(CoroutineContexts.UI, data -> {
             logThreadMessage(tag, "Consume work");
             Toast.makeText(this, data, Toast.LENGTH_SHORT).show();
-            return Unit.INSTANCE;
         }).onSuccess((value) -> {
             // This is running on UI thread
             logThreadMessage(tag, "on work success: " + value);
             mTextView.setText(value);
-            return Unit.INSTANCE;
         }).onError(e -> {
             logThreadMessage(tag, "On work error");
             Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
     }
 
@@ -176,7 +170,6 @@ public class MainActivity extends FragmentActivity {
             logThreadMessage(tag, "Consume element " + result);
             // optionally, consume the data, e.g. save it to database
             ThreadUtils.sleep(300);
-            return Unit.INSTANCE; // must return this
         }).transform(element -> {
             logThreadMessage(tag, "Transform element (" + element + ")");
             return "Consume " + element;
@@ -184,11 +177,9 @@ public class MainActivity extends FragmentActivity {
             // callback on UI thread
             logThreadMessage(tag, "On success: " + element);
             mTextView.setText(element);
-            return Unit.INSTANCE;
         }).onError(exception -> {
             // error callback on UI thread
             logThreadMessage(tag, "On error: " + exception.getMessage());
-            return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
     }
 
@@ -216,11 +207,9 @@ public class MainActivity extends FragmentActivity {
             return books.getItems().get(0).getVolumeInfo();
         }).onSuccess(item -> {
             mTextView.setText(item.getTitle());
-            return Unit.INSTANCE;
         }).onError(error -> {
             error.printStackTrace();
             Toast.makeText(this, "request error", Toast.LENGTH_SHORT).show();
-            return Unit.INSTANCE;
         }).start().manageBy(mWorkManager);
     }
 

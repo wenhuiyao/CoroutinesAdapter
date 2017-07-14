@@ -1,5 +1,6 @@
 package com.wenhui.coroutines
 
+import com.wenhui.coroutines.functions.ConsumeAction
 import org.assertj.core.api.Java6Assertions.assertThat
 
 import org.junit.Test
@@ -99,6 +100,14 @@ class WorkerTest {
         }.start()
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun testOnSuccess_callTwice_differentVersions() {
+        createBackgroundWork {
+            2000
+        }.onSuccess {
+        }.onSuccess(ConsumeAction{
+        }).start()
+    }
 
     @Test
     fun testFilter_false() {

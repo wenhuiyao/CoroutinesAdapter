@@ -1,6 +1,7 @@
 package com.wenhui.coroutines;
 
 
+import com.wenhui.coroutines.functions.ConsumeAction;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
@@ -234,18 +235,16 @@ public class WorkersTest {
             public String invoke(String s, Integer integer) {
                 return s + integer;
             }
-        }).consume(new Function1<String, Unit>() {
+        }).consume(new ConsumeAction<String>() {
             @Override
-            public Unit invoke(String s) {
+            public void invoke(String s) {
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
-        }).onSuccess(new Function1<String, Unit>() {
+        }).onSuccess(new ConsumeAction<String>() {
             @Override
-            public Unit invoke(String s) {
+            public void invoke(String s) {
                 got.set(s);
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
         }).start();
 

@@ -2,6 +2,7 @@
 
 package com.wenhui.coroutines
 
+import com.wenhui.coroutines.functions.ConsumeAction
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.Channel

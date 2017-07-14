@@ -34,6 +34,14 @@ class CoroutinesAdapterTest {
         assertThat(getSingletonConfig()).isSameAs(configuration)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun ensureConfigurationOnlySetOnce() {
+        val executor = Executors.newSingleThreadExecutor()
+        val configuration = Configuration.Builder().executor(executor).build()
+        config(configuration)
+        config(configuration)
+    }
+
     @Test
     fun testGetDefaultConfiguration() {
         val singletonConfig = getSingletonConfig()

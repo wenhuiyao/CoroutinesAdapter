@@ -20,16 +20,13 @@ abstract class BaseExecutor<out T> : Executor<T> {
     /**
      * Doing work, and return the result. Throw exception if there is any error.
      */
-    @Throws(Exception::class)
-    abstract fun onExecute(): T
+    @Throws(Exception::class) abstract fun onExecute(): T
 }
 
 /**
  * Discontinue current execution by throwing [IgnoreException]
  */
-internal fun discontinueExecution(): Nothing {
-    throw IgnoreException("Ignore work")
-}
+internal fun discontinueExecution(): Nothing = throw IgnoreException()
 
 internal fun shouldReportException(exception: Throwable): Boolean = exception !is IgnoreException
 
@@ -37,4 +34,4 @@ internal fun shouldReportException(exception: Throwable): Boolean = exception !i
 /**
  * Exception indicates the operation should be ignored
  */
-internal class IgnoreException(message: String = "Ignore this execution") : Exception(message)
+internal class IgnoreException(message: String = "Ignore the execution") : Exception(message)

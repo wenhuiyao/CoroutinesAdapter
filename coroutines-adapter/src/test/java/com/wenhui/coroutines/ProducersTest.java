@@ -1,7 +1,7 @@
 package com.wenhui.coroutines;
 
 
-import kotlin.Unit;
+import com.wenhui.coroutines.functions.ConsumeAction;
 import kotlin.jvm.functions.Function1;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,13 +38,12 @@ public class ProducersTest {
             public String invoke(String s) {
                 return "Consume " + s;
             }
-        }).onSuccess(new Function1<String, Unit>() {
+        }).onSuccess(new ConsumeAction<String>() {
             @Override
-            public Unit invoke(String s) {
+            public void invoke(String s) {
                 assertThat(got.get()).isNull();
                 got.set(s);
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
         }).start();
 
@@ -78,13 +77,12 @@ public class ProducersTest {
             public String invoke(String s) {
                 return "Consume " + s;
             }
-        }).onSuccess(new Function1<String, Unit>() {
+        }).onSuccess(new ConsumeAction<String>() {
             @Override
-            public Unit invoke(String s) {
+            public void invoke(String s) {
                 got.get().add(s);
                 counter.incrementAndGet();
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
         }).start();
 

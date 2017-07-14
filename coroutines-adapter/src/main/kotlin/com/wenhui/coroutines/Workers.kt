@@ -9,13 +9,13 @@ import kotlinx.coroutines.experimental.async
 /**
  * Create a new background work with _action_
  */
-fun <T> createBackgroundWork(action: Action<T>) = newWorker(ActionWork(action))
+fun <R> createBackgroundWork(action: Action<R>) = newWorker(ActionWork(action))
 
 /**
  * Create a new background work with at least two actions
  */
-fun <T> createBackgroundWorks(action1: Action<T>, action2: Action<T>, vararg actions: Action<T>) = newWorker(MultiActionsWork(listOf(action1, action2, *actions)))
-fun <T> createBackgroundWorks(actions: List<Action<T>> ) = newWorker(MultiActionsWork(actions))
+fun <R> createBackgroundWorks(action1: Action<R>, action2: Action<R>, vararg actions: Action<R>) = newWorker (MultiActionsWork(listOf(action1, action2, *actions)))
+fun <R> createBackgroundWorks(actions: List<Action<R>> ) = newWorker(MultiActionsWork(actions))
 
 /**
  * Create a new background work with an action, and an argument that will pass into the action
@@ -67,20 +67,19 @@ interface QuadMerger<T1, T2, T3, T4> {
 /**
  * Typical action that start a block of code and return a result
  */
-private typealias Action<T> = () -> T
+private typealias Action<R> = () -> R
 
-
-private class ActionWork<out T>(private val action: Action<T>) : Executor<T> {
-    suspend override fun execute(scope: CoroutineScope): T = action()
+private class ActionWork<out R>(private val action: Action<R>) : Executor<R> {
+    suspend override fun execute(scope: CoroutineScope): R = action()
 }
 
-private class MultiActionsWork<out T>(private val actions: List<Action<T>>) : Executor<List<T>> {
-    suspend override fun execute(scope: CoroutineScope): List<T> {
+private class MultiActionsWork<out R>(private val actions: List<Action<R>>) : Executor<List<R>> {
+    suspend override fun execute(scope: CoroutineScope): List<R> {
         return actions.map { async(scope.context) { it() } }.map { it.await() }
     }
 }
 
-private class TransformActionWork<T, out R>(private val arg: T,
+private class TransformActionWork<T, R>(private val arg: T,
                                             private val action: TransformAction<T, R>) : Executor<R> {
     suspend override fun execute(scope: CoroutineScope): R = action(arg)
 }
@@ -88,7 +87,7 @@ private class TransformActionWork<T, out R>(private val arg: T,
 private class MergeWork<T1, T2>(private val action1: Action<T1>,
                                 private val action2: Action<T2>) : Merger<T1, T2> {
 
-    override fun <R> merge(mergeAction: MergeAction<T1, T2, R>): Operator<R, Work> {
+    override fun <R> merge(mergeAction: Function2<T1, T2, R>): Operator<R, Work> {
         return newWorker(object : Executor<R> {
             suspend override fun execute(scope: CoroutineScope): R {
                 val context = scope.context
@@ -105,7 +104,7 @@ private class TriMergeWork<T1, T2, T3>(private val action1: Action<T1>,
                                        private val action2: Action<T2>,
                                        private val action3: Action<T3>) : TriMerger<T1, T2, T3> {
 
-    override fun <R> merge(mergeAction: TriMergeAction<T1, T2, T3, R>): Operator<R, Work> {
+    override fun <R> merge(mergeAction: Function3<T1, T2, T3, R>): Operator<R, Work> {
         return newWorker(object : Executor<R> {
             suspend override fun execute(scope: CoroutineScope): R {
                 val context = scope.context
@@ -124,7 +123,7 @@ private class QuadMergeWork<T1, T2, T3, T4>(private val action1: Action<T1>,
                                             private val action3: Action<T3>,
                                             private val action4: Action<T4>) : QuadMerger<T1, T2, T3, T4> {
 
-    override fun <R> merge(mergeAction: QuadMergeAction<T1, T2, T3, T4, R>): Operator<R, Work> {
+    override fun <R> merge(mergeAction: Function4<T1, T2, T3, T4, R>): Operator<R, Work> {
         return newWorker(object : Executor<R> {
             suspend override fun execute(scope: CoroutineScope): R {
                 val context = scope.context

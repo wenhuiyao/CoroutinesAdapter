@@ -1,5 +1,6 @@
 package com.wenhui.coroutines
 
+import com.wenhui.coroutines.functions.ConsumeAction
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
@@ -9,9 +10,13 @@ import kotlin.coroutines.experimental.CoroutineContext
  * Transform a value from type T to type R
  */
 internal typealias TransformAction<T, R> = (T) -> R
-internal typealias ConsumeAction<T> = (T) -> Unit
+// Kotlin doesn't support java SAM type conversion, this is to workaround that issue: https://discuss.kotlinlang.org/t/kotlin-and-sam-interface-with-two-parameters/293/18
+internal typealias KConsumeAction<T> = (T) -> Unit
 internal typealias FilterAction<T> = (T) -> Boolean
-internal typealias CompleteAction = () -> Unit
+
+internal class KConsumeActionWrapper<T>(private val action: KConsumeAction<T>): ConsumeAction<T> {
+    override fun invoke(item: T) = action(item)
+}
 
 interface Operator<T, W> : Worker<T, W> {
     /**
@@ -36,6 +41,12 @@ interface Operator<T, W> : Worker<T, W> {
     fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Operator<T, W>
 
     /**
+     * Kotlin specific version of consume
+     */
+    fun consume(context: CoroutineContexts = CoroutineContexts.BACKGROUND, action: KConsumeAction<T>): Operator<T, W>
+            = consume(context, KConsumeActionWrapper(action))
+
+    /**
      * Filter an item in background thread, return `true` is the item is valid, `false` to ignore the item
      */
     fun filter(action: FilterAction<T>): Operator<T, W> = filter(CoroutineContexts.BACKGROUND, action)
@@ -52,17 +63,24 @@ interface Worker<T, W> : CompleteNotifier<T, W>, WorkStarter<T, W>
 interface CompleteNotifier<T, W> {
 
     /**
-     * Callback when work succeeded. This is going to be called on UI thread
-     *
-     * @throws IllegalArgumentException if this is called more than once
+     * Callback when execution succeeded
      */
     fun onSuccess(action: ConsumeAction<T>): Worker<T, W>
 
     /**
-     * Callback when work failed. This is going to be called on UI thread
-     * @throws IllegalArgumentException if this is called more than once
+     * [Kotlin version] Callback when execution succeeded
+     */
+    fun onSuccess(action: KConsumeAction<T>): Worker<T, W> = onSuccess(KConsumeActionWrapper(action))
+
+    /**
+     * Callback when there is exception
      */
     fun onError(action: ConsumeAction<Throwable>): Worker<T, W>
+
+    /**
+     * [Kotlin version] Callback when there is exception
+     */
+    fun onError(action: KConsumeAction<Throwable>): Worker<T, W> = onError(KConsumeActionWrapper(action))
 }
 
 /**
@@ -96,7 +114,7 @@ internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Op
         return newWorker(User(executor, context, action))
     }
 
-    override fun filter(context: CoroutineContexts, action: (T) -> Boolean): Operator<T, W> {
+    override fun filter(context: CoroutineContexts, action: FilterAction<T>): Operator<T, W> {
         return newWorker(Filter(executor, context, action))
     }
 

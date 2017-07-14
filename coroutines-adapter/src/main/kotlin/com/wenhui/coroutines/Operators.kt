@@ -1,5 +1,6 @@
 package com.wenhui.coroutines
 
+import com.wenhui.coroutines.functions.ConsumeAction
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.run
 
@@ -26,10 +27,10 @@ internal class Transformer<T, R>(dependedExecutor: Executor<T>,
  * NOTE: the name Consumer is taken, so User in this case is the Consumer
  */
 internal class User<T>(dependedExecutor: Executor<T>,
-                       context: CoroutineContexts,
-                       private val consume: ConsumeAction<T>) : BaseOperator<T, T>(dependedExecutor, context) {
+                         context: CoroutineContexts,
+                         private val consumer: ConsumeAction<T>) : BaseOperator<T, T>(dependedExecutor, context) {
     override fun onExecute(input: T): T {
-        consume(input)
+        consumer.invoke(input)
         return input
     }
 }
