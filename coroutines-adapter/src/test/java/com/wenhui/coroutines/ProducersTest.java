@@ -3,7 +3,6 @@ package com.wenhui.coroutines;
 
 import com.wenhui.coroutines.functions.ConsumeAction;
 import kotlin.jvm.functions.Function1;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -58,7 +57,6 @@ public class ProducersTest {
         assertThat(got.get()).isEqualTo("Consume 9");
     }
 
-    @Ignore
     @Test
     public void testConsumeByPool() throws Exception {
         final int count = 10;

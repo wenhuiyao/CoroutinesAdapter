@@ -1,8 +1,5 @@
 package com.wenhui.coroutines.example;
 
-/**
- * Created by wyao on 6/30/17.
- */
 
 public class ThreadUtils {
 

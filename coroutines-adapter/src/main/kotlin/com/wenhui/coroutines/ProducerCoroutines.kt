@@ -24,7 +24,7 @@ private val CONSUMER_POOL_SIZE = THREAD_SIZE
  * NOTE: the producer will only execute one item at a time, and if an item is received before the previous work
  * completed, previous work will be cancelled and the current item will be consumed immediately
  */
-fun <T, R> consumeBy(action: TransformAction<T, R>): Operator<R, Producer<T>> {
+fun <T, R> consumeBy(action: TransformAction<T, R>): Worker<R, Producer<T>> {
     val channel = newChannel<T>()
     val parentJob = parentJob()
     val producer = ProducerImpl(channel, parentJob)
@@ -42,7 +42,7 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): Operator<R, Producer<T>> {
  * NOTE: Since all the operators will be shared among consumers in different threads, make sure the operators are
  * stateless to avoid race condition
  */
-fun <T, R> consumeByPool(action: TransformAction<T, R>): Operator<R, Producer<T>> {
+fun <T, R> consumeByPool(action: TransformAction<T, R>): Worker<R, Producer<T>> {
     val channel = newChannel<T>()
     val parentJob = parentJob()
     val producer = ProducerImpl(channel, parentJob)
@@ -157,7 +157,7 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
 
     var consumePolicy = CONSUME_POLICY_ONLY_LAST
 
-    override fun <M> newWorker(executor: Executor<M>): Operator<M, Producer<T>> {
+    override fun <M> newWorker(executor: Executor<M>): Worker<M, Producer<T>> {
         return ProducerConsumer(producer, consumer, executor)
     }
 
@@ -172,7 +172,7 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
 
     private fun consumeOnlyLast(): Job {
         var internalJob: Job? = null
-        return consumer.consumeEach { channel, e ->
+        return consumer.consumeEach { channel, _ ->
             if (channel.isEmpty) {
                 // only consume the last element
                 // but we first need to make sure the current job is cancelled to avoid race condition
@@ -191,17 +191,17 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
     }
 }
 
-private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsumer<T, R>>) : Operator<R, Producer<T>> {
+private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsumer<T, R>>) : Worker<R, Producer<T>> {
 
-    override fun <M> transform(context: CoroutineContexts, action: TransformAction<R, M>): Operator<M, Producer<T>> {
+    override fun <M> transform(context: CoroutineContexts, action: TransformAction<R, M>): Worker<M, Producer<T>> {
         return newInstance { transform(context, action) as ProducerConsumer<T, M> }
     }
 
-    override fun consume(context: CoroutineContexts, action: ConsumeAction<R>): Operator<R, Producer<T>> {
+    override fun consume(context: CoroutineContexts, action: ConsumeAction<R>): Worker<R, Producer<T>> {
         return newInstance { consume(context, action) as ProducerConsumer<T, R> }
     }
 
-    override fun filter(context: CoroutineContexts, action: FilterAction<R>): Operator<R, Producer<T>> {
+    override fun filter(context: CoroutineContexts, action: FilterAction<R>): Worker<R, Producer<T>> {
         return newInstance { filter(context, action) as ProducerConsumer<T, R> }
     }
 
@@ -210,17 +210,17 @@ private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsum
         return ProducerConsumers(list)
     }
 
-    override fun onSuccess(action: ConsumeAction<R>): Worker<R, Producer<T>> {
+    override fun onSuccess(action: ConsumeAction<R>): WorkStarter<R, Producer<T>> {
         consumers.forEach { it.onSuccess(action) }
         return this
     }
 
-    override fun onError(action: ConsumeAction<Throwable>): Worker<R, Producer<T>> {
+    override fun onError(action: ConsumeAction<Throwable>): WorkStarter<R, Producer<T>> {
         consumers.forEach { it.onError(action) }
         return this
     }
 
-    override fun setStartDelay(delay: Long): Worker<R, Producer<T>> {
+    override fun setStartDelay(delay: Long): WorkStarter<R, Producer<T>> {
         consumers.forEach { it.setStartDelay(delay) }
         return this
     }

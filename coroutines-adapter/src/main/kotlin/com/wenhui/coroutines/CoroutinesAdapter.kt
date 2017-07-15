@@ -27,11 +27,12 @@ private fun defaultConfiguration() = Configuration.Builder().build()
 class Configuration private constructor(internal val executor: Executor) {
 
     class Builder {
+
+        private var executor: Executor? = null
+
         /**
          * Config the executor use to execute background work
          */
-        private var executor: Executor? = null
-
         fun executor(executor: Executor): Builder {
             this.executor = executor
             return this
