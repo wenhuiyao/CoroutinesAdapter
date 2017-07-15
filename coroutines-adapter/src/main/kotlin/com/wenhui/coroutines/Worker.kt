@@ -6,10 +6,7 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import kotlin.coroutines.experimental.CoroutineContext
 
-/**
- * Transform a value from type T to type R
- */
-internal typealias TransformAction<T, R> = (T) -> R
+
 // Kotlin doesn't support java SAM type conversion, this is to workaround that issue: https://discuss.kotlinlang.org/t/kotlin-and-sam-interface-with-two-parameters/293/18
 internal typealias KConsumeAction<T> = (T) -> Unit
 internal typealias FilterAction<T> = (T) -> Boolean
@@ -18,128 +15,131 @@ internal class KConsumeActionWrapper<T>(private val action: KConsumeAction<T>): 
     override fun invoke(item: T) = action(item)
 }
 
-interface Worker<T, W> : Operator<T, W>, WorkStarter<T, W>
+/**
+ * An object that doing all the work and deliver the result back to UI thread. To start the work, [start] must be called
+ */
+interface Worker<T, S> : Operator<T, S>, WorkStarter<T, S>
 
 
-interface WorkStarter<T, W> : CompleteNotifier<T, W>, Starter<T, W>
+interface WorkStarter<T, S> : CompleteNotifier<T, S>, Starter<T, S>
 
 
-interface Operator<T, W> {
+interface Operator<T, S> {
     /**
      * Transform a source from type T to type R in background thread
      */
-    fun <M> transform(action: TransformAction<T, M>): Worker<M, W> = transform(CoroutineContexts.BACKGROUND, action)
+    fun <U> transform(action: Function1<T, U>): Worker<U, S> = transform(CoroutineContexts.BACKGROUND, action)
 
     /**
      * Transform a source from type T to type R
      * @param context: The context where is transformation will be executed
      */
-    fun <M> transform(context: CoroutineContexts, action: TransformAction<T, M>): Worker<M, W>
+    fun <U> transform(context: CoroutineContexts, action: Function1<T, U>): Worker<U, S>
 
     /**
      * Consume the item, by default it is running in the background
      */
-    fun consume(action: ConsumeAction<T>): Worker<T, W> = consume(CoroutineContexts.BACKGROUND, action)
+    fun consume(action: ConsumeAction<T>): Worker<T, S> = consume(CoroutineContexts.BACKGROUND, action)
 
     /**
      *  @param context: The context where the consume action will be executed
      */
-    fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Worker<T, W>
+    fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Worker<T, S>
 
     /**
      * Kotlin specific version of consume
      */
-    fun consume(context: CoroutineContexts = CoroutineContexts.BACKGROUND, action: KConsumeAction<T>): Worker<T, W>
+    fun consume(context: CoroutineContexts = CoroutineContexts.BACKGROUND, action: KConsumeAction<T>): Worker<T, S>
             = consume(context, KConsumeActionWrapper(action))
 
     /**
      * Filter an item in background thread, return `true` is the item is valid, `false` to ignore the item
      */
-    fun filter(action: FilterAction<T>): Worker<T, W> = filter(CoroutineContexts.BACKGROUND, action)
+    fun filter(action: FilterAction<T>): Worker<T, S> = filter(CoroutineContexts.BACKGROUND, action)
 
     /**
      * Filter an item, return `true` is the item is valid, `false` to ignore the item
      * @param context: The context where the filter action will be executed
      */
-    fun filter(context: CoroutineContexts, action: FilterAction<T>): Worker<T, W>
+    fun filter(context: CoroutineContexts, action: FilterAction<T>): Worker<T, S>
 }
 
 
-interface CompleteNotifier<T, W> {
+interface CompleteNotifier<T, S> {
 
     /**
      * Callback when execution succeeded
      */
-    fun onSuccess(action: ConsumeAction<T>): WorkStarter<T, W>
+    fun onSuccess(action: ConsumeAction<T>): WorkStarter<T, S>
 
     /**
      * [Kotlin version] Callback when execution succeeded
      */
-    fun onSuccess(action: KConsumeAction<T>): WorkStarter<T, W> = onSuccess(KConsumeActionWrapper(action))
+    fun onSuccess(action: KConsumeAction<T>): WorkStarter<T, S> = onSuccess(KConsumeActionWrapper(action))
 
     /**
      * Callback when there is exception
      */
-    fun onError(action: ConsumeAction<Throwable>): WorkStarter<T, W>
+    fun onError(action: ConsumeAction<Throwable>): WorkStarter<T, S>
 
     /**
      * [Kotlin version] Callback when there is exception
      */
-    fun onError(action: KConsumeAction<Throwable>): WorkStarter<T, W> = onError(KConsumeActionWrapper(action))
+    fun onError(action: KConsumeAction<Throwable>): WorkStarter<T, S> = onError(KConsumeActionWrapper(action))
 }
 
 /**
- * `W` The return type after [start], should normally allow the work to be cancel
+ * `S` The return type after [start], should normally allow the work to be cancel
  */
-interface Starter<T, W> {
+interface Starter<T, S> {
 
-    fun setStartDelay(delay: Long): WorkStarter<T, W>
+    fun setStartDelay(delay: Long): WorkStarter<T, S>
 
     /**
      * This must be called to start the work
      */
-    fun start(): W
+    fun start(): S
 }
 
 /**
  * Base worker that doing all the essential works
  */
-internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Worker<T, W> {
+internal abstract class BaseWorker<T, S>(private val action: Action<T>) : Worker<T, S> {
 
     private var successAction: ConsumeAction<T>? = null
     private var errorAction: ConsumeAction<Throwable>? = null
     private var startDelay = 0L
 
-    override fun <M> transform(context: CoroutineContexts, action: TransformAction<T, M>): Worker<M, W> {
-        return newWorker(Transformer(executor, context, action))
+    override fun <U> transform(context: CoroutineContexts, action: Function1<T, U>): Worker<U, S> {
+        return newWorker(Transformer(this.action, context, action))
     }
 
-    override fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Worker<T, W> {
-        return newWorker(User(executor, context, action))
+    override fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Worker<T, S> {
+        return newWorker(User(this.action, context, action))
     }
 
-    override fun filter(context: CoroutineContexts, action: FilterAction<T>): Worker<T, W> {
-        return newWorker(Filter(executor, context, action))
+    override fun filter(context: CoroutineContexts, action: FilterAction<T>): Worker<T, S> {
+        return newWorker(Filter(this.action, context, action))
     }
 
     /**
      * Create a new instance of a Worker, most likely, it is a new instance of itself
      */
-    protected abstract fun <R> newWorker(executor: Executor<R>): Worker<R, W>
+    protected abstract fun <R> newWorker(action: Action<R>): Worker<R, S>
 
-    override fun onSuccess(action: ConsumeAction<T>): WorkStarter<T, W> {
+    override fun onSuccess(action: ConsumeAction<T>): WorkStarter<T, S> {
         require(successAction == null) { "onSuccess() is called twice" }
         successAction = action
         return this
     }
 
-    override fun onError(action: ConsumeAction<Throwable>): WorkStarter<T, W> {
+    override fun onError(action: ConsumeAction<Throwable>): WorkStarter<T, S> {
         require(errorAction == null) { "onError() is called twice" }
         errorAction = action
         return this
     }
 
-    override fun setStartDelay(delay: Long): WorkStarter<T, W> {
+    override fun setStartDelay(delay: Long): WorkStarter<T, S> {
         startDelay = delay
         return this
     }
@@ -148,7 +148,7 @@ internal abstract class BaseWorker<T, W>(private val executor: Executor<T>) : Wo
         if (startDelay > 0) delay(startDelay)
 
         try {
-            val response = executor.execute(this)
+            val response = action.perform(this)
             if (isActive) { // make sure job is not yet cancelled
                 successAction?.let { launch(CONTEXT_UI) { it(response) } }
             }

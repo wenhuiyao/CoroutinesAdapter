@@ -5,7 +5,7 @@ import kotlinx.coroutines.experimental.Job
 /**
  * Utility method to create a new background work
  */
-internal fun <T> newWorker(executor: Executor<T>): Worker<T, Work> = WorkerImpl(executor)
+internal fun <T> newWorker(action: Action<T>): Worker<T, Work> = WorkerImpl(action)
 
 /**
  * Represent a background work, which can be [cancel] when needed.
@@ -46,9 +46,9 @@ internal class WorkImpl(val job: Job) : Work {
 }
 
 
-private class WorkerImpl<T>(executor: Executor<T>) : BaseWorker<T, Work>(executor) {
+private class WorkerImpl<T>(action: Action<T>) : BaseWorker<T, Work>(action) {
 
-    override fun <R> newWorker(executor: Executor<R>): Worker<R, Work> = WorkerImpl(executor)
+    override fun <R> newWorker(action: Action<R>): Worker<R, Work> = WorkerImpl(action)
 
     override fun start(): Work = WorkImpl(executeWork(CONTEXT_BG))
 }

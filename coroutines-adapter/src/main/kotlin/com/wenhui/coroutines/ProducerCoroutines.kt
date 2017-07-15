@@ -24,7 +24,7 @@ private val CONSUMER_POOL_SIZE = THREAD_SIZE
  * NOTE: the producer will only execute one item at a time, and if an item is received before the previous work
  * completed, previous work will be cancelled and the current item will be consumed immediately
  */
-fun <T, R> consumeBy(action: TransformAction<T, R>): Worker<R, Producer<T>> {
+fun <T, R> consumeBy(action: Function1<T, R>): Worker<R, Producer<T>> {
     val channel = newChannel<T>()
     val parentJob = parentJob()
     val producer = ProducerImpl(channel, parentJob)
@@ -42,7 +42,7 @@ fun <T, R> consumeBy(action: TransformAction<T, R>): Worker<R, Producer<T>> {
  * NOTE: Since all the operators will be shared among consumers in different threads, make sure the operators are
  * stateless to avoid race condition
  */
-fun <T, R> consumeByPool(action: TransformAction<T, R>): Worker<R, Producer<T>> {
+fun <T, R> consumeByPool(action: Function1<T, R>): Worker<R, Producer<T>> {
     val channel = newChannel<T>()
     val parentJob = parentJob()
     val producer = ProducerImpl(channel, parentJob)
@@ -122,11 +122,11 @@ private class ProducerImpl<T>(private val channel: SendChannel<T>,
 
 private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
                                  private val parentJob: Job,
-                                 private val action: TransformAction<T, R>) : Consumer<T>, BaseExecutor<R>() {
+                                 private val action: Function1<T, R>) : Consumer<T>, BaseAction<R>() {
 
     @Volatile private var element: T? = null
 
-    override fun onExecute(): R {
+    override fun onPerform(): R {
         element?.let { return action(it) } ?: discontinueExecution()
     }
 
@@ -153,12 +153,12 @@ private const val CONSUME_POLICY_EACH = 1
 
 private class ProducerConsumer<T, R>(private val producer: Producer<T>,
                                      private val consumer: Consumer<T>,
-                                     executor: Executor<R>) : BaseWorker<R, Producer<T>>(executor) {
+                                     action: Action<R>) : BaseWorker<R, Producer<T>>(action) {
 
     var consumePolicy = CONSUME_POLICY_ONLY_LAST
 
-    override fun <M> newWorker(executor: Executor<M>): Worker<M, Producer<T>> {
-        return ProducerConsumer(producer, consumer, executor)
+    override fun <U> newWorker(action: Action<U>): Worker<U, Producer<T>> {
+        return ProducerConsumer(producer, consumer, action)
     }
 
     override fun start(): Producer<T> {
@@ -193,8 +193,8 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
 
 private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsumer<T, R>>) : Worker<R, Producer<T>> {
 
-    override fun <M> transform(context: CoroutineContexts, action: TransformAction<R, M>): Worker<M, Producer<T>> {
-        return newInstance { transform(context, action) as ProducerConsumer<T, M> }
+    override fun <U> transform(context: CoroutineContexts, action: Function1<R, U>): Worker<U, Producer<T>> {
+        return newInstance { transform(context, action) as ProducerConsumer<T, U> }
     }
 
     override fun consume(context: CoroutineContexts, action: ConsumeAction<R>): Worker<R, Producer<T>> {
@@ -205,7 +205,7 @@ private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsum
         return newInstance { filter(context, action) as ProducerConsumer<T, R> }
     }
 
-    private inline fun <M> newInstance(block: ProducerConsumer<T, R>.() -> ProducerConsumer<T, M>): ProducerConsumers<T, M> {
+    private inline fun <U> newInstance(block: ProducerConsumer<T, R>.() -> ProducerConsumer<T, U>): ProducerConsumers<T, U> {
         val list = consumers.map { block(it) }
         return ProducerConsumers(list)
     }

@@ -4,21 +4,21 @@ import com.wenhui.coroutines.functions.ConsumeAction
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.run
 
-internal abstract class BaseOperator<T, R>(private val dependedExecutor: Executor<T>,
-                                           private val context: CoroutineContexts) : Executor<R> {
+internal abstract class BaseOperator<T, R>(private val dependedAction: Action<T>,
+                                           private val context: CoroutineContexts) : Action<R> {
 
-    suspend override fun execute(scope: CoroutineScope): R {
-        val t = dependedExecutor.execute(scope)
-        return run(context.context) { onExecute(t) }
+    suspend override fun perform(scope: CoroutineScope): R {
+        val t = dependedAction.perform(scope)
+        return run(context.context) { onPerform(t) }
     }
 
-    protected abstract fun onExecute(input: T): R
+    protected abstract fun onPerform(input: T): R
 }
 
-internal class Transformer<T, R>(dependedExecutor: Executor<T>,
+internal class Transformer<T, R>(dependedAction: Action<T>,
                                  context: CoroutineContexts,
-                                 private val transform: TransformAction<T, R>) : BaseOperator<T, R>(dependedExecutor, context) {
-    override fun onExecute(input: T): R = transform(input)
+                                 private val transform: Function1<T, R>) : BaseOperator<T, R>(dependedAction, context) {
+    override fun onPerform(input: T): R = transform(input)
 }
 
 /**
@@ -26,19 +26,19 @@ internal class Transformer<T, R>(dependedExecutor: Executor<T>,
  *
  * NOTE: the name Consumer is taken, so User in this case is the Consumer
  */
-internal class User<T>(dependedExecutor: Executor<T>,
+internal class User<T>(dependedAction: Action<T>,
                        context: CoroutineContexts,
-                       private val consume: ConsumeAction<T>) : BaseOperator<T, T>(dependedExecutor, context) {
-    override fun onExecute(input: T): T {
+                       private val consume: ConsumeAction<T>) : BaseOperator<T, T>(dependedAction, context) {
+    override fun onPerform(input: T): T {
         consume(input)
         return input
     }
 }
 
-internal class Filter<T>(dependedExecutor: Executor<T>,
+internal class Filter<T>(dependedAction: Action<T>,
                          context: CoroutineContexts,
-                         private val filter: FilterAction<T>) : BaseOperator<T, T>(dependedExecutor, context) {
-    override fun onExecute(input: T): T {
+                         private val filter: FilterAction<T>) : BaseOperator<T, T>(dependedAction, context) {
+    override fun onPerform(input: T): T {
         if (!filter(input)) discontinueExecution()
         return input
     }

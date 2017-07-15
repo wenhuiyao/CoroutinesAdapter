@@ -32,11 +32,11 @@ class WorkManager {
 
 }
 
-interface Manageable<W> {
+interface Manageable<S> {
 
     /**
      * Allow auto manage by [WorkManager], so when [WorkManager.cancelAllWorks] is called, the
      * current work will be cancelled
      */
-    fun manageBy(manager: WorkManager): W
+    fun manageBy(manager: WorkManager): S
 }

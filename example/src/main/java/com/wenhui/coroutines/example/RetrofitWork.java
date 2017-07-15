@@ -1,6 +1,6 @@
 package com.wenhui.coroutines.example;
 
-import com.wenhui.coroutines.BaseExecutor;
+import com.wenhui.coroutines.BaseAction;
 import okhttp3.Headers;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -9,7 +9,7 @@ import retrofit2.Response;
 /**
  * Create custom background work
  */
-public class RetrofitWork<T> extends BaseExecutor<T> {
+public class RetrofitWork<T> extends BaseAction<T> {
 
     private Call<T> call;
 
@@ -18,7 +18,7 @@ public class RetrofitWork<T> extends BaseExecutor<T> {
     }
 
     @Override
-    public T onExecute() throws Exception {
+    public T onPerform() throws Exception {
         final Response<T> response = call.execute();
         if (response.isSuccessful()) {
             return response.body();

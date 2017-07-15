@@ -260,9 +260,9 @@ public class WorkersTest {
     public void testCreateBackgroundWork() throws Exception {
         final CountDownLatch doneSignal = new CountDownLatch(1);
         final AtomicReference<String> got = new AtomicReference<>();
-        Workers.createBackgroundWork(new BaseExecutor<Integer>() {
+        Workers.createBackgroundWork(new BaseAction<Integer>() {
             @Override
-            public Integer onExecute() throws Exception {
+            public Integer onPerform() throws Exception {
                 TestUtils.sleep(200);
                 return 1000;
             }

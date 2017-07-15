@@ -19,7 +19,7 @@ class WorkerCoroutinesTest {
     fun TestCancelWork() {
         val doneSignal = CountDownLatch(1)
         val got = AtomicInteger(0)
-        val work = newWorker(TestExecutor(1000)).onSuccess {
+        val work = newWorker(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
         }.start()
@@ -38,7 +38,7 @@ class WorkerCoroutinesTest {
     fun TestWorkStatus_completeSuccess() {
         val doneSignal = CountDownLatch(1)
         val got = AtomicInteger(0)
-        val work = newWorker(TestExecutor(1000)).onSuccess {
+        val work = newWorker(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
         }.start()
@@ -56,7 +56,7 @@ class WorkerCoroutinesTest {
     fun TestWorkStatus_cancelled() {
         val doneSignal = CountDownLatch(1)
         val got = AtomicInteger(0)
-        val work = newWorker(TestExecutor(1000)).onSuccess {
+        val work = newWorker(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
         }.start()
@@ -74,8 +74,8 @@ class WorkerCoroutinesTest {
     }
 
 
-    private class TestExecutor<T>(private val t: T) : Executor<T> {
-        suspend override fun execute(scope: CoroutineScope): T {
+    private class TestAction<T>(private val t: T) : Action<T> {
+        suspend override fun perform(scope: CoroutineScope): T {
             Thread.sleep(100)
             return t
         }
