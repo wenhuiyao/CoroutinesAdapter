@@ -13,12 +13,7 @@ internal fun <T> newWorker(action: Action<T>): Worker<T, Work> = WorkerImpl(acti
 interface Work : Manageable<Work> {
 
     /**
-     * Returns `true` when this work is active.
-     */
-    val isActive: Boolean
-
-    /**
-     * Returns `true` when this work has completed for any reason, even if it is cancelled.
+     * Returns `true` when this work has completed for any reason, included cancellation.
      */
     val isCompleted: Boolean
 
@@ -32,8 +27,6 @@ interface Work : Manageable<Work> {
 }
 
 internal class WorkImpl(val job: Job) : Work {
-
-    override val isActive: Boolean get() = job.isActive
 
     override val isCompleted: Boolean get() = job.isCompleted
 
