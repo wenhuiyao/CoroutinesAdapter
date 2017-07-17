@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(constants = BuildConfig::class)
-class WorkerTest {
+class FutureWorkTest {
 
     @Test
     fun testOnSuccess() {

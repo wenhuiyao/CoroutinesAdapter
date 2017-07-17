@@ -11,7 +11,7 @@ import com.wenhui.coroutines.CoroutineContexts;
 import com.wenhui.coroutines.Producer;
 import com.wenhui.coroutines.Producers;
 import com.wenhui.coroutines.WorkManager;
-import com.wenhui.coroutines.Workers;
+import com.wenhui.coroutines.BackgroundWorks;
 import com.wenhui.coroutines.example.books.GoogleBooks;
 import retrofit2.Call;
 import retrofit2.Retrofit;
@@ -69,7 +69,7 @@ public class MainActivity extends FragmentActivity {
         cancelCurrentWork();
 
         mTextView.setText("start simple background work");
-        Workers.createBackgroundWork(() -> {
+        BackgroundWorks.createBackgroundWork(() -> {
             // simulate intensive work
             final int sleep = 2000;
             ThreadUtils.sleep(sleep);
@@ -97,7 +97,7 @@ public class MainActivity extends FragmentActivity {
 
         final String tag = "Merge";
         mTextView.setText("start merge work");
-        Workers.mergeBackgroundWorks(() -> {
+        BackgroundWorks.mergeBackgroundWorks(() -> {
             // simulate intensive work
             final int sleep = 2000;
             logThreadMessage(tag, "Start merge work 1");
@@ -203,7 +203,7 @@ public class MainActivity extends FragmentActivity {
         final Call<GoogleBooks> call = retrofitService.getGoogleBook("isbn:0747532699");
 
         // use the custom background work we create
-        Workers.createBackgroundWork(new RetrofitWork<>(call)).transform(books -> {
+        BackgroundWorks.createBackgroundWork(new RetrofitWork<>(call)).transform(books -> {
             return books.getItems().get(0).getVolumeInfo();
         }).onSuccess(item -> {
             mTextView.setText(item.getTitle());
