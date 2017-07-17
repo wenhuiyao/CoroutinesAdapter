@@ -19,7 +19,7 @@ class WorkerCoroutinesTest {
     fun TestCancelWork() {
         val doneSignal = CountDownLatch(1)
         val got = AtomicInteger(0)
-        val work = newWorker(TestAction(1000)).onSuccess {
+        val work = newFutureWork(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
         }.start()
@@ -38,7 +38,7 @@ class WorkerCoroutinesTest {
     fun TestWorkStatus_completeSuccess() {
         val doneSignal = CountDownLatch(1)
         val got = AtomicInteger(0)
-        val work = newWorker(TestAction(1000)).onSuccess {
+        val work = newFutureWork(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
         }.start()
@@ -54,7 +54,7 @@ class WorkerCoroutinesTest {
     fun TestWorkStatus_cancelled() {
         val doneSignal = CountDownLatch(1)
         val got = AtomicInteger(0)
-        val work = newWorker(TestAction(1000)).onSuccess {
+        val work = newFutureWork(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
         }.start()

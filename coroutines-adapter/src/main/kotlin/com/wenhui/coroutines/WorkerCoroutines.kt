@@ -5,7 +5,7 @@ import kotlinx.coroutines.experimental.Job
 /**
  * Utility method to create a new background work
  */
-internal fun <T> newWorker(action: Action<T>): FutureWork<T, Worker> = FutureWorkImpl(action)
+internal fun <T> newFutureWork(action: Action<T>): FutureWork<T, Worker> = FutureWorkImpl(action)
 
 /**
  * Represent a background work, which can be [cancel] when needed.
