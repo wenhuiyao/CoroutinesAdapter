@@ -1,7 +1,7 @@
 # CoroutinesAdapter
 
 Kotlin coroutines make asynchronous programming simple and easy, however, it has Kotlin specific keyword that can't be interoped with Java.
-This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) for use in Android.
+This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.coroutines) to Android use.
 
 [Introduction to Kotlin coroutines](https://kotlinlang.org/docs/reference/coroutines.html)
 
@@ -11,61 +11,53 @@ This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.c
 ##### Simple background work
 
 ```Java
-Work work = Workers.createBackgroundWork(() -> {
-        // Do some in the background
-        return doSomeBackgroundWork();
-    }).transform(CoroutineContexts.BACKGROUND, (value) -> {
-        // Optionally, transform value to a new value in background
-        return newValue;
-    }).onSuccess((value) -> {
-        // Callback when work is completed successfully. This is happending on UI thread
-    }).onError(throwable -> {
-        // Callback when work has error. This is happening on UI thread
-    }).setStartDelay(2000).start();
+Worker worker = FutureWorks.from(() -> {
+            // Do intensive background work, and return a result
+        }).transform(data -> {
+            // Optionally, transform the data to different type in background
+        }).onSuccess(value -> {
+            // Listen to work complete success, this is running on UI thread
+        }).onError(e -> {
+            // Listen to exception
+        }).start(); // Call start to start the work
 
-// When activity/fragment is destroyed, the work can be canceled to avoid memory leak
-work.cancel();
+// The work can be cancelled at anytime
+worker.cancel();
 
 ```
 
 ##### Merge multiple background works
 
 ```Java
-Work work = Workers.mergeBackgroundWorks(() -> {
-        // Do some work in background
-    }, () -> {
-        // Do another work in background in parallel with the previous work
-    }).merge((int1, int2) -> {
-        // This block will be executed when both works are completed
-        return int1 + int2;
-    }).onSuccess((value) -> {
-        // Callback when work is completed successfully. This is happending on UI thread
-        mTextView.setText(value);
-    }).onError(e -> {
-        // Callback when work is completed successfully. This is happending on UI thread
-        Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-    }).start();
+FutureWorks.and(() -> {
+            // Do one background work, and return its result
+        }, () -> {
+            // Do another background work, and return its result
+        }).merge((result1, result2) -> {
+            // Merge both works' result into one, and return it
+        }).consume(CoroutineContexts.UI, data -> {
+            // Optionally, consume the data on UI thread
+        }).onSuccess((value) -> {
+            // Listen to work complete success, this is running on UI thread
+        }).onError(e -> {
+            // Listen to exception
+        }).start();
 
 ```
 
 ##### Producer/Consumer
 
 ```Java
-Producer producer = Producers.consumeBy((Integer element) -> {
-        // do some work in the background
-        int result = element % 5;
-        return result;
+Producer producer = Producers.consumeBy((String element) -> {
+        // do background work when receive element
     }).filter(element -> {
-        return element % 2 == 0; // only interesting in any even numbers
+        // filter out element that doesn't meet the condition
     }).consume(result -> {
         // consume the data, e.g. saving it to database
-    }).transform(CoroutineContexts.UI, element ->  {
-        // optionally, data can be consumed on UI thread
-        return "Consume " + element;
     }).onSuccess(element -> {
-        // success callback
+         // Listen to work complete success, this is running on UI thread
     }).onError(throwable -> {
-        // error callback
+        // Listen to exception
     }).start();
 
     // Now, produce item to be consumed by the above code

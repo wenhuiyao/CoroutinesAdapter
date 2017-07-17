@@ -22,13 +22,13 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(constants = BuildConfig.class)
-public class BackgroundWorksTest {
+public class FutureWorksTest {
 
     @Test
     public void testCreateBackgroundWork_simpleAction() throws Exception {
         final AtomicInteger got = new AtomicInteger(0);
         final CountDownLatch doneSignal = new CountDownLatch(1);
-        BackgroundWorks.createBackgroundWork(
+        FutureWorks.from(
                 new Function0<Integer>() {
                     @Override
                     public Integer invoke() {
@@ -64,7 +64,7 @@ public class BackgroundWorksTest {
         final CountDownLatch doneSignal = new CountDownLatch(1);
         final WorkManager workManager = new WorkManager();
 
-        BackgroundWorks.createBackgroundWork(
+        FutureWorks.from(
                 new Function0<Integer>() {
                     @Override
                     public Integer invoke() {
@@ -105,7 +105,7 @@ public class BackgroundWorksTest {
         final AtomicInteger counter = new AtomicInteger(0);
 
         for(int i = 0; i < count; i++) {
-            BackgroundWorks.createBackgroundWork(
+            FutureWorks.from(
                     new Function0<Integer>() {
                         @Override
                         public Integer invoke() {
@@ -139,7 +139,7 @@ public class BackgroundWorksTest {
     public void testCreateBackgroundWork_actionWithParam() throws Exception {
         final AtomicInteger got = new AtomicInteger(0);
         final CountDownLatch doneSignal = new CountDownLatch(1);
-        BackgroundWorks.createBackgroundWork("1000",
+        FutureWorks.from("1000",
                 new Function1<String, Integer>() {
                     @Override
                     public Integer invoke(String integer) {
@@ -172,7 +172,7 @@ public class BackgroundWorksTest {
     public void testCreateBackgroundWorks_multipleActions() throws Exception {
         final AtomicInteger got = new AtomicInteger(0);
         final CountDownLatch doneSignal = new CountDownLatch(1);
-        BackgroundWorks.createBackgroundWorks(
+        FutureWorks.merge(
                 new Function0<Integer>() {
                     @Override
                     public Integer invoke() {
@@ -217,7 +217,7 @@ public class BackgroundWorksTest {
     public void testMergeBackgroundWorks() throws Exception {
         final CountDownLatch doneSignal = new CountDownLatch(2);
         final AtomicReference<String> got = new AtomicReference<>();
-        BackgroundWorks.mergeBackgroundWorks(
+        FutureWorks.and(
                 new Function0<String>() {
                     @Override
                     public String invoke() {
@@ -260,7 +260,7 @@ public class BackgroundWorksTest {
     public void testCreateBackgroundWork() throws Exception {
         final CountDownLatch doneSignal = new CountDownLatch(1);
         final AtomicReference<String> got = new AtomicReference<>();
-        BackgroundWorks.createBackgroundWork(new BaseAction<Integer>() {
+        FutureWorks.from(new BaseAction<Integer>() {
             @Override
             public Integer onPerform() throws Exception {
                 TestUtils.sleep(200);
