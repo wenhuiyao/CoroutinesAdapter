@@ -4,10 +4,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.widget.Toast
-import com.wenhui.coroutines.CoroutineContexts
-import com.wenhui.coroutines.FutureWorks
-import com.wenhui.coroutines.Producer
-import com.wenhui.coroutines.consumeByPool
+import com.wenhui.coroutines.*
 import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -36,7 +33,7 @@ class MainKtActivity : AppCompatActivity() {
 
     private fun onSimpleBackgroundWorkClick() {
         textView.text = "Start simple background work"
-        FutureWorks.from {
+        from {
             Thread.sleep(1000)
             1000
         }.consume {
@@ -49,7 +46,7 @@ class MainKtActivity : AppCompatActivity() {
     }
 
     private fun onSimpleMergeWorkButtonClick() {
-        FutureWorks.and({
+        and({
             ThreadUtils.sleep(1000)
             "Merge "
         }, {
@@ -66,26 +63,6 @@ class MainKtActivity : AppCompatActivity() {
         }.start()
     }
 
-
-    private fun producer(): Producer<Int> {
-        return consumeByPool<Int, Int> {
-            ThreadUtils.sleep(2000)
-            it % 10
-        }.filter {
-            val pass = it % 2 == 0
-            if(!pass) {
-                Toast.makeText(this, "Filter element: " + it, Toast.LENGTH_SHORT).show()
-            }
-            pass
-        }.consume {
-            ThreadUtils.sleep(2000)
-        }.onSuccess {
-
-        }.onError {
-
-        }.start()
-    }
-
     private fun doRetrofitWork() {
         textView.text = "Start requesting google books"
         val retrofit = Retrofit.Builder()
@@ -96,7 +73,7 @@ class MainKtActivity : AppCompatActivity() {
         val retrofitService = retrofit.create(RetrofitService::class.java)
         val call = retrofitService.getGoogleBook("isbn:0747532699")
 
-        FutureWorks.from(RetrofitWork(call)).transform {
+       from(RetrofitWork(call)).transform {
             it.items[0].volumeInfo
         }.onSuccess {
             textView.text = it.title
