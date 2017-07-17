@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(constants = BuildConfig::class)
-class WorkerTest {
+class FutureWorkTest {
 
     @Test
     fun testOnSuccess() {
@@ -27,7 +27,7 @@ class WorkerTest {
         val callSuccess = AtomicBoolean(false)
         val callError = AtomicBoolean(false)
         val doneSignal = CountDownLatch(1)
-        createBackgroundWork {
+        from {
             Thread.sleep(200)
             2000
         }.onSuccess {
@@ -57,7 +57,7 @@ class WorkerTest {
         val callSuccess = AtomicBoolean(false)
         val callError = AtomicBoolean(false)
         val doneSignal = CountDownLatch(1)
-        createBackgroundWork {
+        from {
             Thread.sleep(200)
             throw IllegalStateException("Failed")
             2000
@@ -84,7 +84,7 @@ class WorkerTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun testOnSuccess_callTwice() {
-        createBackgroundWork {
+        from {
             2000
         }.onSuccess {
         }.onSuccess {
@@ -93,7 +93,7 @@ class WorkerTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun testOnError_callTwice() {
-        createBackgroundWork {
+        from {
             2000
         }.onError {
         }.onError {
@@ -102,7 +102,7 @@ class WorkerTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun testOnSuccess_callTwice_differentVersions() {
-        createBackgroundWork {
+        from {
             2000
         }.onSuccess {
         }.onSuccess(ConsumeAction{
@@ -114,7 +114,7 @@ class WorkerTest {
         val got = AtomicInteger(0)
         val called = AtomicBoolean(false)
         val doneSignal = CountDownLatch(2)
-        createBackgroundWork {
+        from {
             Thread.sleep(200)
             2000
         }.filter {
@@ -141,7 +141,7 @@ class WorkerTest {
         val got = AtomicInteger(0)
         val called = AtomicBoolean(false)
         val doneSignal = CountDownLatch(2)
-        createBackgroundWork {
+        from {
             Thread.sleep(200)
             2000
         }.filter {
@@ -168,7 +168,7 @@ class WorkerTest {
         val got = AtomicInteger()
         val called = AtomicBoolean(false)
         val doneSignal = CountDownLatch(2)
-        createBackgroundWork {
+        from {
             Thread.sleep(200)
             2000
         }.consume {
@@ -193,7 +193,7 @@ class WorkerTest {
         val got = AtomicReference<String>()
         val called = AtomicBoolean(false)
         val doneSignal = CountDownLatch(2)
-        createBackgroundWork {
+        from {
             Thread.sleep(200)
             2000
         }.transform {

@@ -53,7 +53,7 @@ class WorkManagerTest {
     }
 
     fun test() {
-        mergeBackgroundWorks({
+        and({
             "Merge "
         }, {
             1000

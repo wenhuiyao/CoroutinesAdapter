@@ -3,7 +3,7 @@ package com.wenhui.coroutines.example
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import com.wenhui.coroutines.createBackgroundWork
+import com.wenhui.coroutines.from
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -14,7 +14,7 @@ class MainKtActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         simpleBackgroundWorkButton.setOnClickListener {
-            createBackgroundWork {
+            from {
                 Thread.sleep(1000)
                 1000
             }.consume {

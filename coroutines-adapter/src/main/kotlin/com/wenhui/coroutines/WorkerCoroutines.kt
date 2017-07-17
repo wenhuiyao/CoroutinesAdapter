@@ -5,20 +5,15 @@ import kotlinx.coroutines.experimental.Job
 /**
  * Utility method to create a new background work
  */
-internal fun <T> newWorker(action: Action<T>): Worker<T, Work> = WorkerImpl(action)
+internal fun <T> newWorker(action: Action<T>): FutureWork<T, Worker> = FutureWorkImpl(action)
 
 /**
  * Represent a background work, which can be [cancel] when needed.
  */
-interface Work : Manageable<Work> {
+interface Worker : Manageable<Worker> {
 
     /**
-     * Returns `true` when this work is active.
-     */
-    val isActive: Boolean
-
-    /**
-     * Returns `true` when this work has completed for any reason, even if it is cancelled.
+     * Returns `true` when this work has completed for any reason, included cancellation.
      */
     val isCompleted: Boolean
 
@@ -31,25 +26,23 @@ interface Work : Manageable<Work> {
 
 }
 
-internal class WorkImpl(val job: Job) : Work {
-
-    override val isActive: Boolean get() = job.isActive
+internal class WorkerImpl(val job: Job) : Worker {
 
     override val isCompleted: Boolean get() = job.isCompleted
 
     override fun cancel() = job.cancel()
 
-    override fun manageBy(manager: WorkManager): Work {
+    override fun manageBy(manager: WorkManager): Worker {
         manager.manageJob(job)
         return this
     }
 }
 
 
-private class WorkerImpl<T>(action: Action<T>) : BaseWorker<T, Work>(action) {
+private class FutureWorkImpl<T>(action: Action<T>) : BaseFutureWork<T, Worker>(action) {
 
-    override fun <R> newWorker(action: Action<R>): Worker<R, Work> = WorkerImpl(action)
+    override fun <R> newWorker(action: Action<R>): FutureWork<R, Worker> = FutureWorkImpl(action)
 
-    override fun start(): Work = WorkImpl(executeWork(CONTEXT_BG))
+    override fun start(): Worker = WorkerImpl(executeWork(CONTEXT_BG))
 }
 

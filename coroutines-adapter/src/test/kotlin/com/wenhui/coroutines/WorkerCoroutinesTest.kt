@@ -43,12 +43,10 @@ class WorkerCoroutinesTest {
             doneSignal.countDown()
         }.start()
 
-        assertThat(work.isActive).isEqualTo(true)
         assertThat(work.isCompleted).isEqualTo(false)
         doneSignal.await(2000, TimeUnit.MILLISECONDS)
         Robolectric.flushForegroundThreadScheduler()
 
-        assertThat(work.isActive).isEqualTo(false)
         assertThat(work.isCompleted).isEqualTo(true)
     }
 
@@ -61,7 +59,6 @@ class WorkerCoroutinesTest {
             doneSignal.countDown()
         }.start()
 
-        assertThat(work.isActive).isEqualTo(true)
         assertThat(work.isCompleted).isEqualTo(false)
         work.cancel()
 
@@ -69,7 +66,6 @@ class WorkerCoroutinesTest {
         Robolectric.flushForegroundThreadScheduler()
 
         assertThat(got.get()).isEqualTo(0)
-        assertThat(work.isActive).isEqualTo(false)
         assertThat(work.isCompleted).isEqualTo(true)
     }
 
