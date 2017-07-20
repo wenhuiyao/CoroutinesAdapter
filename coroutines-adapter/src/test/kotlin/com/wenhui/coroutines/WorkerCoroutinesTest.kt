@@ -70,7 +70,7 @@ class WorkerCoroutinesTest {
     }
 
 
-    private class TestAction<T>(private val t: T) : Action<T> {
+    private class TestAction<T>(private val t: T) : Action<T>() {
         suspend override fun perform(scope: CoroutineScope): T {
             Thread.sleep(100)
             return t

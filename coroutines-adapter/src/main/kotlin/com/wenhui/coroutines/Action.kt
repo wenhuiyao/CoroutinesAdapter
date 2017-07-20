@@ -2,17 +2,17 @@ package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.CoroutineScope
 
-internal interface Action<out T> {
+abstract class Action<out T> {
     /**
      * Doing work, and return the result. Throw exception if there is any error.
      */
-    suspend fun perform(scope: CoroutineScope): T
+    suspend internal abstract fun perform(scope: CoroutineScope): T
 }
 
 /**
  * The basic building block for a background work. This can be extended from Java.
  */
-abstract class BaseAction<out T> : Action<T> {
+abstract class BaseAction<out T> : Action<T>() {
     suspend final override fun perform(scope: CoroutineScope): T {
         return onPerform()
     }
@@ -20,7 +20,7 @@ abstract class BaseAction<out T> : Action<T> {
     /**
      * Doing work, and return the result. Throw exception if there is any error.
      */
-    @Throws(Exception::class) abstract fun onPerform(): T
+    @Throws(Exception::class) protected abstract fun onPerform(): T
 }
 
 /**

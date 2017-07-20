@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.widget.Toast
-import com.wenhui.coroutines.*
+import com.wenhui.coroutines.CoroutineContexts
+import com.wenhui.coroutines.and
+import com.wenhui.coroutines.from
 import kotlinx.android.synthetic.main.activity_main.*
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -73,7 +75,7 @@ class MainKtActivity : AppCompatActivity() {
         val retrofitService = retrofit.create(RetrofitService::class.java)
         val call = retrofitService.getGoogleBook("isbn:0747532699")
 
-       from(RetrofitWork(call)).transform {
+        from(RetrofitWork(call)).transform {
             it.items[0].volumeInfo
         }.onSuccess {
             textView.text = it.title

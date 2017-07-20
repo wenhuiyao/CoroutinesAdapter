@@ -5,7 +5,7 @@ import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.run
 
 internal abstract class BaseOperator<T, R>(private val dependedAction: Action<T>,
-                                           private val context: CoroutineContexts) : Action<R> {
+                                           private val context: CoroutineContexts) : Action<R>() {
 
     suspend override fun perform(scope: CoroutineScope): R {
         val t = dependedAction.perform(scope)
