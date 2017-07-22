@@ -18,7 +18,7 @@ internal class KConsumeActionWrapper<T>(private val action: KConsumeAction<T>): 
 /**
  * An object that doing all the work and deliver the result back to UI thread. To start the work, [start] must be called
  */
-interface FutureWork<T, S> : Operator<T, S>, WorkStarter<T, S>
+interface Work<T, S> : Operator<T, S>, WorkStarter<T, S>
 
 
 interface WorkStarter<T, S> : CompleteNotifier<T, S>, Starter<T, S>
@@ -28,40 +28,40 @@ interface Operator<T, S> {
     /**
      * Transform a source from type T to type R in background thread
      */
-    fun <U> transform(action: Function1<T, U>): FutureWork<U, S> = transform(CoroutineContexts.BACKGROUND, action)
+    fun <U> transform(action: Function1<T, U>): Work<U, S> = transform(CoroutineContexts.BACKGROUND, action)
 
     /**
      * Transform a source from type T to type R
      * @param context: The context where is transformation will be executed
      */
-    fun <U> transform(context: CoroutineContexts, action: Function1<T, U>): FutureWork<U, S>
+    fun <U> transform(context: CoroutineContexts, action: Function1<T, U>): Work<U, S>
 
     /**
      * Consume the item, by default it is running in the background
      */
-    fun consume(action: ConsumeAction<T>): FutureWork<T, S> = consume(CoroutineContexts.BACKGROUND, action)
+    fun consume(action: ConsumeAction<T>): Work<T, S> = consume(CoroutineContexts.BACKGROUND, action)
 
     /**
      *  @param context: The context where the consume action will be executed
      */
-    fun consume(context: CoroutineContexts, action: ConsumeAction<T>): FutureWork<T, S>
+    fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Work<T, S>
 
     /**
      * Kotlin specific version of consume
      */
-    fun consume(context: CoroutineContexts = CoroutineContexts.BACKGROUND, action: KConsumeAction<T>): FutureWork<T, S>
+    fun consume(context: CoroutineContexts = CoroutineContexts.BACKGROUND, action: KConsumeAction<T>): Work<T, S>
             = consume(context, KConsumeActionWrapper(action))
 
     /**
      * Filter an item in background thread, return `true` is the item is valid, `false` to ignore the item
      */
-    fun filter(action: FilterAction<T>): FutureWork<T, S> = filter(CoroutineContexts.BACKGROUND, action)
+    fun filter(action: FilterAction<T>): Work<T, S> = filter(CoroutineContexts.BACKGROUND, action)
 
     /**
      * Filter an item, return `true` is the item is valid, `false` to ignore the item
      * @param context: The context where the filter action will be executed
      */
-    fun filter(context: CoroutineContexts, action: FilterAction<T>): FutureWork<T, S>
+    fun filter(context: CoroutineContexts, action: FilterAction<T>): Work<T, S>
 }
 
 
@@ -104,28 +104,28 @@ interface Starter<T, S> {
 /**
  * Base worker that doing all the essential works
  */
-internal abstract class BaseFutureWork<T, S>(private val action: Action<T>) : FutureWork<T, S> {
+internal abstract class BaseWork<T, S>(private val action: Action<T>) : Work<T, S> {
 
     private var successAction: ConsumeAction<T>? = null
     private var errorAction: ConsumeAction<Throwable>? = null
     private var startDelay = 0L
 
-    override fun <U> transform(context: CoroutineContexts, action: Function1<T, U>): FutureWork<U, S> {
+    override fun <U> transform(context: CoroutineContexts, action: Function1<T, U>): Work<U, S> {
         return newWorker(Transformer(this.action, context, action))
     }
 
-    override fun consume(context: CoroutineContexts, action: ConsumeAction<T>): FutureWork<T, S> {
+    override fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Work<T, S> {
         return newWorker(User(this.action, context, action))
     }
 
-    override fun filter(context: CoroutineContexts, action: FilterAction<T>): FutureWork<T, S> {
+    override fun filter(context: CoroutineContexts, action: FilterAction<T>): Work<T, S> {
         return newWorker(Filter(this.action, context, action))
     }
 
     /**
      * Create a new instance of a Worker, most likely, it is a new instance of itself
      */
-    protected abstract fun <R> newWorker(action: Action<R>): FutureWork<R, S>
+    protected abstract fun <R> newWorker(action: Action<R>): Work<R, S>
 
     override fun onSuccess(action: ConsumeAction<T>): WorkStarter<T, S> {
         require(successAction == null) { "onSuccess() is called twice" }

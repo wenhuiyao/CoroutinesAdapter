@@ -69,24 +69,32 @@ public class MainActivity extends FragmentActivity {
         cancelCurrentWork();
 
         mTextView.setText("start simple background work");
-        FutureWorks.from(() -> {
+//        FutureWorks.from(() -> {
+//            // simulate intensive work
+//            final int sleep = 2000;
+//            ThreadUtils.sleep(sleep);
+//            return sleep;
+//        }).transform(CoroutineContexts.BACKGROUND, data -> {
+//            // Optionally, transform the data to different data
+//            // and this is running in background
+//            ThreadUtils.sleep(1000);
+//            return "Sleep " + data + " ms";
+//        }).onSuccess((value) -> {
+//            // This is running on UI thread
+//            mTextView.setText(value);
+//        }).onError(e -> {
+//            Log.d(TAG, "onError");
+//            Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+//        }).setStartDelay(1000).start().manageBy(mWorkManager);
+
+        final Integer integer = FutureWorks.from(() -> {
             // simulate intensive work
             final int sleep = 2000;
             ThreadUtils.sleep(sleep);
             return sleep;
-        }).transform(CoroutineContexts.BACKGROUND, data -> {
-            // Optionally, transform the data to different data
-            // and this is running in background
-            ThreadUtils.sleep(1000);
-            return "Sleep " + data + " ms";
-        }).onSuccess((value) -> {
-            // This is running on UI thread
-            mTextView.setText(value);
-        }).onError(e -> {
-            Log.d(TAG, "onError");
-            Toast.makeText(this, "error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }).setStartDelay(1000).start().manageBy(mWorkManager);
+        }).get();
 
+        logThreadMessage("SimpleWork", "get: " + integer);
     }
 
     /**

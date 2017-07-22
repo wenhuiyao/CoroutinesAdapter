@@ -19,7 +19,7 @@ fun <T, R> from(arg: T, action: Function1<T, R>) = newFutureWork(TransformAction
 /**
  * Create a single background work from [BaseAction]
  */
-fun <T> from(action: BaseAction<T>): FutureWork<T, Worker> = newFutureWork(action)
+fun <T> from(action: BaseAction<T>) = newFutureWork(action)
 
 /**
  * Merge multiple background works of same types into one
@@ -39,21 +39,21 @@ fun <T1, T2, T3, T4> and(action1: Function0<T1>, action2: Function0<T2>, action3
  * A functional interface that accept 2 inputs and output 1 result
  */
 interface Merger<T1, T2> {
-    fun <R> merge(mergeAction: Function2<T1, T2, R>): FutureWork<R, Worker>
+    fun <R> merge(mergeAction: Function2<T1, T2, R>): FutureWork<R>
 }
 
 /**
  * A functional interface that accept 3 inputs and output 1 result
  */
 interface TriMerger<T1, T2, T3> {
-    fun <R> merge(mergeAction: Function3<T1, T2, T3, R>): FutureWork<R, Worker>
+    fun <R> merge(mergeAction: Function3<T1, T2, T3, R>): FutureWork<R>
 }
 
 /**
  * A functional interface that accept 4 inputs and output 1 result
  */
 interface QuadMerger<T1, T2, T3, T4> {
-    fun <R> merge(mergeAction: Function4<T1, T2, T3, T4, R>): FutureWork<R, Worker>
+    fun <R> merge(mergeAction: Function4<T1, T2, T3, T4, R>): FutureWork<R>
 }
 
 
@@ -75,7 +75,7 @@ private class TransformActionWork<T, R>(private val arg: T,
 private class MergeWork<T1, T2>(private val action1: Function0<T1>,
                                 private val action2: Function0<T2>) : Merger<T1, T2> {
 
-    override fun <R> merge(mergeAction: Function2<T1, T2, R>): FutureWork<R, Worker> {
+    override fun <R> merge(mergeAction: Function2<T1, T2, R>): FutureWork<R> {
         return newFutureWork(object : Action<R>() {
             suspend override fun perform(scope: CoroutineScope): R {
                 val context = scope.context
@@ -92,7 +92,7 @@ private class TriMergeWork<T1, T2, T3>(private val action1: Function0<T1>,
                                        private val action2: Function0<T2>,
                                        private val action3: Function0<T3>) : TriMerger<T1, T2, T3> {
 
-    override fun <R> merge(mergeAction: Function3<T1, T2, T3, R>): FutureWork<R, Worker> {
+    override fun <R> merge(mergeAction: Function3<T1, T2, T3, R>): FutureWork<R> {
         return newFutureWork(object : Action<R>() {
             suspend override fun perform(scope: CoroutineScope): R {
                 val context = scope.context
@@ -111,7 +111,7 @@ private class QuadMergeWork<T1, T2, T3, T4>(private val action1: Function0<T1>,
                                             private val action3: Function0<T3>,
                                             private val action4: Function0<T4>) : QuadMerger<T1, T2, T3, T4> {
 
-    override fun <R> merge(mergeAction: Function4<T1, T2, T3, T4, R>): FutureWork<R, Worker> {
+    override fun <R> merge(mergeAction: Function4<T1, T2, T3, T4, R>): FutureWork<R> {
         return newFutureWork(object : Action<R>() {
             suspend override fun perform(scope: CoroutineScope): R {
                 val context = scope.context
