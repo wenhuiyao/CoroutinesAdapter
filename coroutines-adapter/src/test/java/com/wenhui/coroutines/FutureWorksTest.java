@@ -2,7 +2,6 @@ package com.wenhui.coroutines;
 
 
 import com.wenhui.coroutines.functions.ConsumeAction;
-import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import kotlin.jvm.functions.Function2;
@@ -41,12 +40,11 @@ public class FutureWorksTest {
             public Integer invoke(Integer integer) {
                 return integer + 100;
             }
-        }).onSuccess(new Function1<Integer, Unit>() {
+        }).onSuccess(new ConsumeAction<Integer>() {
             @Override
-            public Unit invoke(Integer integer) {
-                got.set(integer);
+            public void invoke(Integer item) throws Exception {
+                got.set(item);
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
         }).start();
 
@@ -90,12 +88,11 @@ public class FutureWorksTest {
             public Integer invoke(Integer integer) {
                 return integer + 100;
             }
-        }).onSuccess(new Function1<Integer, Unit>() {
+        }).onSuccess(new ConsumeAction<Integer>() {
             @Override
-            public Unit invoke(Integer integer) {
+            public void invoke(Integer integer) {
                 got.set(integer);
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
         }).start().manageBy(workManager);
 
@@ -127,11 +124,10 @@ public class FutureWorksTest {
                             return 1000;
                         }
                     }
-            ).onSuccess(new Function1<Integer, Unit>() {
+            ).onSuccess(new ConsumeAction<Integer>() {
                 @Override
-                public Unit invoke(Integer integer) {
+                public void invoke(Integer integer) {
                     doneSignal.countDown();
-                    return null;
                 }
             }).start().manageBy(workManager);
         }
@@ -164,12 +160,11 @@ public class FutureWorksTest {
             public Integer invoke(Integer integer) {
                 return integer + 100;
             }
-        }).onSuccess(new Function1<Integer, Unit>() {
+        }).onSuccess(new ConsumeAction<Integer>() {
             @Override
-            public Unit invoke(Integer integer) {
+            public void invoke(Integer integer) {
                 got.set(integer);
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
         }).start();
 
@@ -209,12 +204,11 @@ public class FutureWorksTest {
                 }
                 return result;
             }
-        }).onSuccess(new Function1<Integer, Unit>() {
+        }).onSuccess(new ConsumeAction<Integer>() {
             @Override
-            public Unit invoke(Integer integer) {
+            public void invoke(Integer integer) {
                 got.set(integer);
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
         }).start();
 
@@ -284,12 +278,11 @@ public class FutureWorksTest {
             public String invoke(Integer integer) {
                 return "transform " + integer;
             }
-        }).onSuccess(new Function1<String, Unit>() {
+        }).onSuccess(new ConsumeAction<String>() {
             @Override
-            public Unit invoke(String s) {
+            public void invoke(String s) {
                 got.set(s);
                 doneSignal.countDown();
-                return Unit.INSTANCE;
             }
         }).start();
 

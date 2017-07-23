@@ -21,7 +21,7 @@ class WorkerCoroutinesTest {
         val work = newFutureWork(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
-        }.start()
+        }.setStartDelay(200).start()
 
         assertThat(got.get()).isEqualTo(0)
         work.cancel()
@@ -56,7 +56,7 @@ class WorkerCoroutinesTest {
         val work = newFutureWork(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
-        }.start()
+        }.setStartDelay(200).start()
 
         assertThat(work.isCompleted).isEqualTo(false)
         work.cancel()
