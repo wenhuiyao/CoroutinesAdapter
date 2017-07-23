@@ -1,6 +1,5 @@
 package com.wenhui.coroutines
 
-import kotlinx.coroutines.experimental.CoroutineScope
 import org.assertj.core.api.Java6Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,8 +69,8 @@ class WorkerCoroutinesTest {
     }
 
 
-    private class TestAction<T>(private val t: T) : Action<T>() {
-        suspend override fun perform(scope: CoroutineScope): T {
+    private class TestAction<T>(private val t: T) : BaseAction<T>() {
+        override fun run(): T {
             Thread.sleep(100)
             return t
         }

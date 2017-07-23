@@ -59,6 +59,19 @@ public class FutureWorksTest {
     }
 
     @Test
+    public void testCreateBackground_getResult() throws Exception {
+        Integer integer = FutureWorks.from(new Function0<Integer>() {
+                    @Override
+                    public Integer invoke() {
+                        TestUtils.sleep(100);
+                        return 1000;
+                    }
+                }
+        ).get();
+        assertThat(integer).isEqualTo(1000);
+    }
+
+    @Test
     public void testCreateBackgroundWork_simpleAction_cancelByhWorkManager() throws Exception {
         final AtomicInteger got = new AtomicInteger(0);
         final CountDownLatch doneSignal = new CountDownLatch(1);
@@ -262,7 +275,7 @@ public class FutureWorksTest {
         final AtomicReference<String> got = new AtomicReference<>();
         FutureWorks.from(new BaseAction<Integer>() {
             @Override
-            public Integer onPerform() throws Exception {
+            public Integer run() throws Exception {
                 TestUtils.sleep(200);
                 return 1000;
             }

@@ -1,8 +1,6 @@
 package com.wenhui.coroutines
 
 import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.runBlocking
 import java.util.concurrent.ExecutionException
 
 /**
@@ -11,6 +9,7 @@ import java.util.concurrent.ExecutionException
 internal fun <T> newFutureWork(action: Action<T>): FutureWork<T> = FutureWorkImpl(action)
 
 interface FutureWork<T> : Work<T, Worker> {
+
     /**
      * Synchronous call to get the computation result, throw exception if there are errors
      *
@@ -63,23 +62,6 @@ private class FutureWorkImpl<T>(private val action: Action<T>) : FutureWork<T>, 
 
     override fun start(): Worker = WorkerImpl(executeWork(CONTEXT_BG))
 
-    override fun get(): T {
-        var result: T? = null
-        var exception: Throwable = CancellationException()
-        runBlocking {
-            val aResult = async(context) { action.perform(this) }
-            try {
-                result = aResult.await()
-            } catch(e: Throwable) {
-                if (shouldReportException(e) && e !is kotlinx.coroutines.experimental.CancellationException) {
-                    exception = ExecutionException(e)
-                } else {
-                    exception = CancellationException()
-                }
-            }
-        }
-
-        return result ?: throw exception
-    }
+    override fun get(): T = action.run()
 }
 

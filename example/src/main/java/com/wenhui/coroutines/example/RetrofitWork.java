@@ -18,7 +18,7 @@ public class RetrofitWork<T> extends BaseAction<T> {
     }
 
     @Override
-    protected T onPerform() throws Exception {
+    public T run() throws Exception {
         final Response<T> response = call.execute();
         if (response.isSuccessful()) {
             return response.body();

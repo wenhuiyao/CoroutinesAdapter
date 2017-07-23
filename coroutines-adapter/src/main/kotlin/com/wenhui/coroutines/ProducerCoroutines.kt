@@ -57,6 +57,7 @@ private fun <T> newChannel() = Channel<T>(Channel.UNLIMITED)
  */
 private fun parentJob(): Job = Job()
 
+
 interface Producer<T> : Manageable<Producer<T>> {
 
     /**
@@ -122,7 +123,7 @@ private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
 
     @Volatile private var element: T? = null
 
-    override fun onPerform(): R {
+    override fun run(): R {
         element?.let { return action(it) } ?: discontinueExecution()
     }
 

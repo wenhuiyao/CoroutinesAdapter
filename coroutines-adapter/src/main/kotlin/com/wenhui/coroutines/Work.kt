@@ -9,11 +9,12 @@ import kotlin.coroutines.experimental.CoroutineContext
 
 // Kotlin doesn't support java SAM type conversion, this is to workaround that issue: https://discuss.kotlinlang.org/t/kotlin-and-sam-interface-with-two-parameters/293/18
 internal typealias KConsumeAction<T> = (T) -> Unit
-internal typealias FilterAction<T> = (T) -> Boolean
-
-internal class KConsumeActionWrapper<T>(private val action: KConsumeAction<T>): ConsumeAction<T> {
+internal class KConsumeActionWrapper<T>(private val action: KConsumeAction<T>) : ConsumeAction<T> {
     override fun invoke(item: T) = action(item)
 }
+
+internal typealias FilterAction<T> = (T) -> Boolean
+
 
 /**
  * An object that doing all the work and deliver the result back to UI thread. To start the work, [start] must be called
@@ -148,7 +149,7 @@ internal abstract class BaseWork<T, S>(private val action: Action<T>) : Work<T, 
         if (startDelay > 0) delay(startDelay)
 
         try {
-            val response = action.perform(this)
+            val response = action.runAsync(this)
             if (isActive) { // make sure job is not yet cancelled
                 successAction?.let { launch(CONTEXT_UI) { it(response) } }
             }
