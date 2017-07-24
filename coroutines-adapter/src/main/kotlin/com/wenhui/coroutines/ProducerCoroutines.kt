@@ -22,7 +22,7 @@ private val CONSUMER_POOL_SIZE = THREAD_SIZE
  * NOTE: the producer will only execute one item at a time, and if an item is received before the previous work
  * completed, previous work will be cancelled and the current item will be consumed immediately
  */
-fun <T, R> consumeBy(action: Function1<T, R>): FutureWork<R, Producer<T>> {
+fun <T, R> consumeBy(action: Function1<T, R>): Work<R, Producer<T>> {
     val channel = newChannel<T>()
     val parentJob = parentJob()
     val producer = ProducerImpl(channel, parentJob)
@@ -38,7 +38,7 @@ fun <T, R> consumeBy(action: Function1<T, R>): FutureWork<R, Producer<T>> {
  * NOTE: Since all the operators will be shared among consumers in different threads, make sure the operators are
  * stateless to avoid race condition
  */
-fun <T, R> consumeByPool(action: Function1<T, R>): FutureWork<R, Producer<T>> {
+fun <T, R> consumeByPool(action: Function1<T, R>): Work<R, Producer<T>> {
     val channel = newChannel<T>()
     val parentJob = parentJob()
     val producer = ProducerImpl(channel, parentJob)
@@ -56,6 +56,7 @@ private fun <T> newChannel() = Channel<T>(Channel.UNLIMITED)
  * The parent job that used to monitor producer/consumer job
  */
 private fun parentJob(): Job = Job()
+
 
 interface Producer<T> : Manageable<Producer<T>> {
 
@@ -122,7 +123,7 @@ private class ConsumerImpl<T, R>(private val channel: ReceiveChannel<T>,
 
     @Volatile private var element: T? = null
 
-    override fun onPerform(): R {
+    override fun run(): R {
         element?.let { return action(it) } ?: discontinueExecution()
     }
 
@@ -149,11 +150,11 @@ private const val CONSUME_POLICY_EACH = 1
 
 private class ProducerConsumer<T, R>(private val producer: Producer<T>,
                                      private val consumer: Consumer<T>,
-                                     action: Action<R>) : BaseFutureWork<R, Producer<T>>(action) {
+                                     action: Action<R>) : BaseWork<R, Producer<T>>(action) {
 
     var consumePolicy = CONSUME_POLICY_ONLY_LAST
 
-    override fun <U> newWorker(action: Action<U>): FutureWork<U, Producer<T>> {
+    override fun <U> newWorker(action: Action<U>): Work<U, Producer<T>> {
         return ProducerConsumer(producer, consumer, action)
     }
 
@@ -187,17 +188,17 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
     }
 }
 
-private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsumer<T, R>>) : FutureWork<R, Producer<T>> {
+private class ProducerConsumers<T, R>(private val consumers: List<ProducerConsumer<T, R>>) : Work<R, Producer<T>> {
 
-    override fun <U> transform(context: CoroutineContexts, action: Function1<R, U>): FutureWork<U, Producer<T>> {
+    override fun <U> transform(context: CoroutineContexts, action: Function1<R, U>): Work<U, Producer<T>> {
         return newInstance { transform(context, action) as ProducerConsumer<T, U> }
     }
 
-    override fun consume(context: CoroutineContexts, action: ConsumeAction<R>): FutureWork<R, Producer<T>> {
+    override fun consume(context: CoroutineContexts, action: ConsumeAction<R>): Work<R, Producer<T>> {
         return newInstance { consume(context, action) as ProducerConsumer<T, R> }
     }
 
-    override fun filter(context: CoroutineContexts, action: FilterAction<R>): FutureWork<R, Producer<T>> {
+    override fun filter(context: CoroutineContexts, action: FilterAction<R>): Work<R, Producer<T>> {
         return newInstance { filter(context, action) as ProducerConsumer<T, R> }
     }
 

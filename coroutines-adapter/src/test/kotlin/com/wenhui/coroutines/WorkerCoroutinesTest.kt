@@ -1,6 +1,5 @@
 package com.wenhui.coroutines
 
-import kotlinx.coroutines.experimental.CoroutineScope
 import org.assertj.core.api.Java6Assertions.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,7 +21,7 @@ class WorkerCoroutinesTest {
         val work = newFutureWork(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
-        }.start()
+        }.setStartDelay(200).start()
 
         assertThat(got.get()).isEqualTo(0)
         work.cancel()
@@ -57,7 +56,7 @@ class WorkerCoroutinesTest {
         val work = newFutureWork(TestAction(1000)).onSuccess {
             got.set(it)
             doneSignal.countDown()
-        }.start()
+        }.setStartDelay(200).start()
 
         assertThat(work.isCompleted).isEqualTo(false)
         work.cancel()
@@ -70,8 +69,8 @@ class WorkerCoroutinesTest {
     }
 
 
-    private class TestAction<T>(private val t: T) : Action<T> {
-        suspend override fun perform(scope: CoroutineScope): T {
+    private class TestAction<T>(private val t: T) : BaseAction<T>() {
+        override fun run(): T {
             Thread.sleep(100)
             return t
         }

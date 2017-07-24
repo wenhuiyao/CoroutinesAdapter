@@ -51,14 +51,4 @@ class WorkManagerTest {
         val job = Job()
         workManager.manageJob(job)
     }
-
-    fun test() {
-        and({
-            "Merge "
-        }, {
-            1000
-        }).merge { s, i ->
-            s.hashCode() + i
-        }.consume { }
-    }
 }

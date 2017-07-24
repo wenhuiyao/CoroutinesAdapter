@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 
 ext {
 
-    releaseVersion = '0.8.0'
+    releaseVersion = '0.8.1'
     snapshotVersion = "$releaseVersion-snapshot-1"
 
     siteUrl = 'https://github.com/wenhuiyao/CoroutinesAdapter' // Homepage URL of the library
@@ -39,7 +39,7 @@ android {
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 25
-        versionCode 24
+        versionCode 25
         versionName libraryVersion
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
