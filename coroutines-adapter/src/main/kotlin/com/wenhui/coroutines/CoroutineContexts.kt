@@ -33,11 +33,11 @@ private class CoroutinesThreadFactory(private val name: String) : ThreadFactory 
 
     override fun newThread(target: Runnable?): Thread {
         val threadName = "$name-${threadNo.incrementAndGet()}"
-        return PoolThread(target, threadName)
+        return CoroutinesThread(target, threadName)
     }
 }
 
-private class PoolThread(target: Runnable?, name: String) : Thread(target, name) {
+private class CoroutinesThread(target: Runnable?, name: String) : Thread(target, name) {
     override fun run() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND)
         super.run()

@@ -15,7 +15,7 @@ import kotlinx.coroutines.experimental.launch
 private val CONSUMER_POOL_SIZE = THREAD_SIZE
 
 /**
- * Utility method to create a [Producer], and the producer can be reused to execute items by calling [Producer.produce],
+ * Utility method to create a [Producer], and the producer can be used to execute items by calling [Producer.produce],
  * producer will be active until [Producer.close] is called, or when using [WorkManager], producer will be
  * closed when [WorkManager.cancelAllWorks] is called.
  *
@@ -32,7 +32,7 @@ fun <T, R> consumeBy(action: Function1<T, R>): Work<R, Producer<T>> {
 
 /**
  * Utility method to create a [Producer], whose item will be consumed by a pool of consumers, and the producer can be
- * reused to execute items by calling [Producer.produce], producer will be active until [Producer.close] is called,
+ * used to execute items by calling [Producer.produce], producer will be active until [Producer.close] is called,
  * or when using [WorkManager], producer will be closed when [WorkManager.cancelAllWorks] is called.
  *
  * NOTE: Since all the operators will be shared among consumers in different threads, make sure the operators are

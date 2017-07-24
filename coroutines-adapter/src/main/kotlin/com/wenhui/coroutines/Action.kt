@@ -5,28 +5,30 @@ import kotlinx.coroutines.experimental.runBlocking
 
 internal interface Action<out T> {
     /**
-     * Doing work asynchronously, this will be called in kotlin coroutines
+     * Doing work asynchronously, this will be called from kotlin coroutines
      */
     suspend fun runAsync(scope: CoroutineScope): T
 
     /**
-     * Doing work, and return the result. Throw exception if there is any error.
+     * Doing work, block current thread until work is done, then return the result.
+     * Throw exception if there is any error.
      */
     @Throws(Exception::class) fun run(): T
 }
 
 /**
  * The basic building block for a background work. This can be extended from Java.
+ *
+ * Subclass this when there is not coroutine call in action
  */
 abstract class BaseAction<out T> : Action<T> {
     suspend final override fun runAsync(scope: CoroutineScope): T = run()
 }
 
 /**
- * Base class for coroutine actions
+ * Subclass this when there is coroutine call in the action
  */
 internal abstract class BaseSuspendableAction<out T> : Action<T> {
-
 
     /**
      * run the action interrupt synchronously, and return the result, throw exception if there is error
