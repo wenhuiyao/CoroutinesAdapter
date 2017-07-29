@@ -33,7 +33,7 @@ public class ExampleApplication extends Application {
                 .executor(Executors.newScheduledThreadPool(3, new ThreadFactory()))
                 .build();
 
-        CoroutinesAdapter.config(config);
+        CoroutinesAdapter.configCoroutinesAdapter(config);
     }
 
     private class ThreadFactory implements java.util.concurrent.ThreadFactory {

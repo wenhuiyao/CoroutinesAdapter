@@ -14,7 +14,11 @@ This library is to adapt Kotlin [coroutines](https://github.com/Kotlin/kotlinx.c
 Worker worker = FutureWorks.from(() -> {
             // Do intensive background work, and return a result
         }).transform(data -> {
-            // Optionally, transform the data to different type in background
+            // Optionally, transform the data to different type
+        }).filter(data -> {
+            // Optionally, filter the data
+        }).consume(data -> {
+            // Optionally, consume the data
         }).onSuccess(value -> {
             // Listen to work complete success, this is running on UI thread
         }).onError(e -> {

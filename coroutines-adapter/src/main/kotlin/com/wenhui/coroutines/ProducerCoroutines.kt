@@ -154,7 +154,7 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
 
     var consumePolicy = CONSUME_POLICY_ONLY_LAST
 
-    override fun <U> newWorker(action: Action<U>): Work<U, Producer<T>> {
+    override fun <U> newWork(action: Action<U>): Work<U, Producer<T>> {
         return ProducerConsumer(producer, consumer, action)
     }
 

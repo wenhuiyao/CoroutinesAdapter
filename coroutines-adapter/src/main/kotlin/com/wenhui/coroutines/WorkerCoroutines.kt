@@ -58,7 +58,7 @@ internal class WorkerImpl(val job: Job) : Worker {
 
 private class FutureWorkImpl<T>(private val action: Action<T>) : FutureWork<T>, BaseWork<T, Worker>(action) {
 
-    override fun <R> newWorker(action: Action<R>): Work<R, Worker> = FutureWorkImpl(action)
+    override fun <R> newWork(action: Action<R>): Work<R, Worker> = FutureWorkImpl(action)
 
     override fun start(): Worker = WorkerImpl(executeWork(CONTEXT_BG))
 

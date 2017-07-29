@@ -112,21 +112,21 @@ internal abstract class BaseWork<T, S>(private val action: Action<T>) : Work<T, 
     private var startDelay = 0L
 
     override fun <U> transform(context: CoroutineContexts, action: Function1<T, U>): Work<U, S> {
-        return newWorker(Transformer(this.action, context, action))
+        return newWork(Transformer(this.action, context, action))
     }
 
     override fun consume(context: CoroutineContexts, action: ConsumeAction<T>): Work<T, S> {
-        return newWorker(User(this.action, context, action))
+        return newWork(User(this.action, context, action))
     }
 
     override fun filter(context: CoroutineContexts, action: FilterAction<T>): Work<T, S> {
-        return newWorker(Filter(this.action, context, action))
+        return newWork(Filter(this.action, context, action))
     }
 
     /**
-     * Create a new instance of a Worker, most likely, it is a new instance of itself
+     * Create a new instance of a Work, most likely, it is a new instance of itself
      */
-    protected abstract fun <R> newWorker(action: Action<R>): Work<R, S>
+    protected abstract fun <R> newWork(action: Action<R>): Work<R, S>
 
     override fun onSuccess(action: ConsumeAction<T>): WorkStarter<T, S> {
         require(successAction == null) { "onSuccess() is called twice" }

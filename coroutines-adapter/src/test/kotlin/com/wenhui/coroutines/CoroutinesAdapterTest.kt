@@ -29,7 +29,7 @@ class CoroutinesAdapterTest {
     fun testSingletonConfiguration_customConfiguration() {
         val executor = Executors.newSingleThreadExecutor()
         val configuration = Configuration.Builder().executor(executor).build()
-        config(configuration)
+        configCoroutinesAdapter(configuration)
 
         assertThat(getSingletonConfig()).isSameAs(configuration)
     }
@@ -38,8 +38,8 @@ class CoroutinesAdapterTest {
     fun ensureConfigurationOnlySetOnce() {
         val executor = Executors.newSingleThreadExecutor()
         val configuration = Configuration.Builder().executor(executor).build()
-        config(configuration)
-        config(configuration)
+        configCoroutinesAdapter(configuration)
+        configCoroutinesAdapter(configuration)
     }
 
     @Test

@@ -11,18 +11,16 @@ private var configuration: Configuration? = null
  *
  * This must be called before the first background work used
  */
-fun config(config: Configuration) {
+fun configCoroutinesAdapter(config: Configuration) {
     require(configuration == null) { "Configuration is already set" }
     configuration = config
 }
 
 internal fun getSingletonConfig(): Configuration {
-    val config = configuration ?: defaultConfiguration()
+    val config = configuration ?: Configuration.Builder().build()
     configuration = config
     return config
 }
-
-private fun defaultConfiguration() = Configuration.Builder().build()
 
 class Configuration private constructor(internal val executor: Executor) {
 
@@ -33,10 +31,7 @@ class Configuration private constructor(internal val executor: Executor) {
         /**
          * Config the executor use to execute background work
          */
-        fun executor(executor: Executor): Builder {
-            this.executor = executor
-            return this
-        }
+        fun executor(executor: Executor) = also { it.executor = executor }
 
         fun build(): Configuration {
             return Configuration(executor = executor ?: newDefaultExecutorService())

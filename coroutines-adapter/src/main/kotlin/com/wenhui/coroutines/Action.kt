@@ -39,7 +39,7 @@ internal abstract class BaseSuspendableAction<out T> : Action<T> {
     override final fun run(): T {
         var result: T? = null
         var exception: Throwable = CancellationException()
-        runBlocking { // blocking current thread, and execute the result
+        runBlocking { // blocking current thread util have the result
             try {
                 result = runAsync(this)
             } catch(e: Throwable) {
