@@ -42,7 +42,7 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:25.4.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
-    implementation 'com.squareup.retrofit2:converter-moshi:2.1.0'
+    implementation 'com.squareup.retrofit2:converter-moshi:2.3.0'
 
     implementation project(':coroutines-adapter')
 //    implementation 'com.wenhui:coroutines-adapter:0.7.0'
@@ -59,4 +59,8 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
+}
+
+androidExtensions {
+    experimental = true
 }

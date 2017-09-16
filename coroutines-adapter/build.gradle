@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 
 ext {
 
-    releaseVersion = '0.8.1'
+    releaseVersion = '0.8.2'
     snapshotVersion = "$releaseVersion-snapshot-1"
 
     siteUrl = 'https://github.com/wenhuiyao/CoroutinesAdapter' // Homepage URL of the library
@@ -58,7 +58,7 @@ android {
 }
 
 dependencies {
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-android:0.16'
+    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-android:0.18'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.assertj:assertj-core:2.8.0'
