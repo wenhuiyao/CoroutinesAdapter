@@ -43,7 +43,7 @@ interface Worker : Manageable<Worker> {
 
 }
 
-internal class WorkerImpl(val job: Job) : Worker {
+internal class WorkerImpl(private val job: Job) : Worker {
 
     override val isCompleted: Boolean get() = job.isCompleted
 

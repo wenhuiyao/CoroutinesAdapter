@@ -63,7 +63,7 @@ private class ActionWork<out R>(private val action: Function0<R>) : BaseAction<R
 
 private class MultiActionsWork<out R>(private val actions: List<Function0<R?>>) : BaseSuspendableAction<List<R?>>() {
     suspend override fun runAsync(scope: CoroutineScope): List<R?> {
-        return actions.map { async(scope.context) { it() } }.map { it.await() }
+        return actions.map { async(scope.coroutineContext) { it() } }.map { it.await() }
     }
 }
 
@@ -78,7 +78,7 @@ private class MergeWork<T1, T2>(private val action1: Function0<T1>,
     override fun <R> merge(mergeAction: Function2<T1?, T2?, R>): FutureWork<R> {
         return newFutureWork(object : BaseSuspendableAction<R>() {
             suspend override fun runAsync(scope: CoroutineScope): R {
-                val context = scope.context
+                val context = scope.coroutineContext
                 val result1 = async(context) { action1() }
                 val result2 = async(context) { action2() }
 
@@ -95,7 +95,7 @@ private class TriMergeWork<T1, T2, T3>(private val action1: Function0<T1>,
     override fun <R> merge(mergeAction: Function3<T1?, T2?, T3?, R>): FutureWork<R> {
         return newFutureWork(object : BaseSuspendableAction<R>() {
             suspend override fun runAsync(scope: CoroutineScope): R {
-                val context = scope.context
+                val context = scope.coroutineContext
                 val result1 = async(context) { action1() }
                 val result2 = async(context) { action2() }
                 val result3 = async(context) { action3() }
@@ -114,7 +114,7 @@ private class QuadMergeWork<T1, T2, T3, T4>(private val action1: Function0<T1>,
     override fun <R> merge(mergeAction: Function4<T1?, T2?, T3?, T4?, R>): FutureWork<R> {
         return newFutureWork(object : BaseSuspendableAction<R>() {
             suspend override fun runAsync(scope: CoroutineScope): R {
-                val context = scope.context
+                val context = scope.coroutineContext
                 val result1 = async(context) { action1() }
                 val result2 = async(context) { action2() }
                 val result3 = async(context) { action3() }

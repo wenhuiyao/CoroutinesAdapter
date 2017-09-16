@@ -175,7 +175,7 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
                 // but we first need to make sure the current job is cancelled to avoid race condition
                 internalJob?.cancel()
                 // must use the context from the scope, so when the parent job is cancelled, this will be cancelled
-                internalJob = executeWork(context)
+                internalJob = executeWork(coroutineContext)
             }
         }
     }
@@ -183,7 +183,7 @@ private class ProducerConsumer<T, R>(private val producer: Producer<T>,
     private fun consumeEach(): Job {
         return consumer.consumeEach { _, _ ->
             // must use the context from the scope, so when the parent job is cancelled, this will be cancelled
-            executeWork(context).join()
+            executeWork(coroutineContext).join()
         }
     }
 }
