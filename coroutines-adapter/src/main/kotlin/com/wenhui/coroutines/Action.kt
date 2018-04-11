@@ -22,7 +22,7 @@ internal interface Action<out T> {
  * Subclass this when there is not coroutine call in action
  */
 abstract class BaseAction<out T> : Action<T> {
-    suspend final override fun runAsync(scope: CoroutineScope): T = run()
+    final override suspend fun runAsync(scope: CoroutineScope): T = run()
 }
 
 /**
@@ -36,7 +36,7 @@ internal abstract class BaseSuspendableAction<out T> : Action<T> {
      * @throws [ExecutionException]
      * @throws [CancellationException]
      */
-    override final fun run(): T {
+    final override fun run(): T {
         var result: T? = null
         var exception: Throwable = CancellationException()
         runBlocking { // blocking current thread util have the result

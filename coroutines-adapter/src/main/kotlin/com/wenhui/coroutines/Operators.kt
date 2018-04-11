@@ -2,14 +2,14 @@ package com.wenhui.coroutines
 
 import com.wenhui.coroutines.functions.ConsumeAction
 import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.experimental.withContext
 
 internal abstract class BaseOperator<T, R>(private val dependedAction: Action<T>,
                                            private val context: CoroutineContexts) : Action<R> {
 
-    suspend override fun runAsync(scope: CoroutineScope): R {
+    override suspend fun runAsync(scope: CoroutineScope): R {
         val t = dependedAction.runAsync(scope)
-        return run(context.context) { onRun(t) }
+        return withContext(context.context) { onRun(t) }
     }
 
     override fun run(): R {

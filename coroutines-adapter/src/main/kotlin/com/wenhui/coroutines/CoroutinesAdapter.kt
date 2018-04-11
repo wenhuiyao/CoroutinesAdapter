@@ -4,7 +4,7 @@ package com.wenhui.coroutines
 
 import java.util.concurrent.Executor
 
-private @Volatile var configuration: Configuration? = null
+@Volatile private var configuration: Configuration? = null
 
 /**
  * Configure CoroutinesAdapter.
